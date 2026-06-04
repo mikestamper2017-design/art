@@ -11,13 +11,32 @@
   
   <style>
     /* Reset & Core Canvas Dimensions */
-    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #050505; color: #111111; }
+    body, html { 
+      margin: 0; 
+      padding: 0; 
+      width: 100%; 
+      height: 100%; 
+      overflow: hidden; 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+      background-color: transparent !important; /* CRUCIAL: Prevent color masks on iOS */
+    }
     
     /* AR Viewport Frame */
-    #ar-viewport { width: 100vw; height: 70vh; position: relative; background-color: #000; }
+    #ar-viewport { 
+      width: 100vw; 
+      height: 70vh; 
+      position: relative; 
+      background-color: transparent !important; /* CRUCIAL: Allow video passthrough */
+    }
+    
+    /* Force underlying engine canvas to honor transparency */
+    a-scene canvas {
+      background-color: transparent !important;
+      z-index: 1;
+    }
     
     /* Gatekeeper Tap-to-Start Shield */
-    #audio-gatekeeper { position: absolute; top: 0; left: 0; width: 100vw; height: 70vh; background: rgba(0,0,0,0.85); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff; text-align: center; padding: 20px; box-sizing: border-box; cursor: pointer; transition: opacity 0.4s ease; }
+    #audio-gatekeeper { position: absolute; top: 0; left: 0; width: 100vw; height: 70vh; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff; text-align: center; padding: 20px; box-sizing: border-box; cursor: pointer; transition: opacity 0.4s ease; }
     #audio-gatekeeper h2 { font-size: 18px; font-weight: 400; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
     #audio-gatekeeper p { font-size: 13px; color: #aaa; margin: 0 0 20px 0; max-width: 280px; line-height: 1.5; }
     .gatekeeper-btn { background: #ffffff; color: #000000; border: none; padding: 12px 28px; font-size: 14px; font-weight: 500; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px; }
@@ -93,16 +112,17 @@
 
     <div id="tracking-indicator">System: Initializing Lens</div>
 
-    <!-- Main AR Framework Matrix -->
-    <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: false;" 
+    <!-- Main AR Framework Matrix (Configured with explicit device alpha channels) -->
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; filterMinCF:0.001; filterBeta: 1000;" 
              embedded 
-             renderer="colorManagement: true, physicallyCorrectLights: true" 
+             color-space="sRGB"
+             renderer="colorManagement: true, physicallyCorrectLights: true, alpha: true, antialias: true" 
              vr-mode-ui="enabled: false" 
              device-orientation-permission-ui="enabled: false">
       
       <!-- High-Fidelity Asset Pipeline -->
       <a-assets>
-        <!-- Temporary cloud image to test camera rendering without video codec errors -->
+        <!-- External web fallback to guarantee zero code asset formatting errors -->
         <img id="testPaintingOverlay" src="https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=600">
         
         <!-- Target 1 Assets: Multi-Phase Photo array for Sculpture Processing -->
@@ -118,13 +138,11 @@
 
       <!-- TRACKING ANCHOR 0: THE PAINTING CANVAS -->
       <a-entity id="painting-anchor" mindar-image-target="targetIndex: 0">
-        <!-- Renders a flat image placeholder over your painting target to guarantee instant tracking visibility -->
         <a-image src="#testPaintingOverlay" position="0 0 0" width="1" height="0.666"></a-image>
       </a-entity>
 
       <!-- TRACKING ANCHOR 1: THE SCULPTURE COMPANION CARD -->
       <a-entity id="sculpture-anchor" mindar-image-target="targetIndex: 1">
-        <!-- Renders a perfectly square historical photo display plane over the card -->
         <a-image id="sculpture-render-plane" src="#sculpturePhase1" position="0 0 0" width="1" height="1"></a-image>
       </a-entity>
       
@@ -167,38 +185,32 @@
   </div>
 
   <script>
-    // System Element Cache Locators
     const audioTrack = document.getElementById('artistNarrative');
     const audioActionBtn = document.getElementById('audio-action-btn');
     const audioStatusText = document.getElementById('audio-status');
     const trackingLabel = document.getElementById('tracking-indicator');
     
-    // Application Interaction State Tracking
     let activeTargetMode = 'painting'; 
 
-    // Device Audio System Bootstrapper Configuration
     function unlockAudioSystem() {
       const shield = document.getElementById('audio-gatekeeper');
       shield.style.opacity = '0';
       setTimeout(() => shield.style.display = 'none', 400);
       
-      // Warm up the web browser media system context
       audioTrack.play().then(() => {
         audioTrack.pause();
         audioTrack.currentTime = 0;
-      }).catch(err => console.log("Audio pipeline buffered."));
+      }).catch(err => console.log("Audio warm-up bypassed."));
       
-      // Fire up the hardware camera engine matrix
+      // Start MindAR
       const sceneEl = document.querySelector('a-scene');
       sceneEl.systems["mindar-image-system"].start();
     }
 
-    // AR Hardware Image Target Event Listeners
     document.addEventListener("DOMContentLoaded", () => {
       const paintingTarget = document.getElementById('painting-anchor');
       const sculptureTarget = document.getElementById('sculpture-anchor');
 
-      // Painting Visual Target Detection Events
       paintingTarget.addEventListener("targetFound", () => {
         trackingLabel.innerText = "Target: Painting Active";
         activeTargetMode = 'painting';
@@ -210,7 +222,6 @@
         trackingLabel.innerText = "System: Scanning Scene";
       });
 
-      // Sculpture Visual Target Detection Events
       sculptureTarget.addEventListener("targetFound", () => {
         trackingLabel.innerText = "Target: Sculpture Active";
         activeTargetMode = 'sculpture';
@@ -223,7 +234,6 @@
       });
     });
 
-    // Integrated Audio Pipeline Controller
     function toggleAudioPlayback() {
       if (audioTrack.paused) {
         audioTrack.play();
@@ -236,7 +246,6 @@
       }
     }
 
-    // Material Process Stage Controller Logic
     function setSculpturePhase(phaseIndex) {
       const displayPlane = document.getElementById('sculpture-render-plane');
       
@@ -256,7 +265,6 @@
       }
     }
 
-    // Core Dock Navigation State Swapper Engine
     function switchDockTab(selectedTab) {
       const mediaTabBtn = document.getElementById('tab-media');
       const provTabBtn = document.getElementById('tab-prov');
