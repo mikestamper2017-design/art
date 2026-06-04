@@ -184,9 +184,8 @@
       shield.style.opacity = '0';
       setTimeout(() => shield.style.display = 'none', 400);
       
-      // Force initialization of video player context with direct touch interaction
       videoAsset.play().then(() => {
-         videoAsset.pause(); // Warmed up and ready for target triggers
+         videoAsset.pause(); 
       }).catch(e => console.log("Video bootstrap handled."));
 
       audioTrack.play().then(() => {
@@ -209,7 +208,6 @@
         document.getElementById('ui-subtext').innerText = "Original Watercolor Canvas Layer";
         document.getElementById('sculpture-timeline').style.display = 'none';
         
-        // FORCED RE-RENDER FOR SAFARI CODEC LAYERS
         videoAsset.muted = true;
         videoAsset.play();
       });
@@ -231,6 +229,7 @@
       });
     });
 
+    // Integrated Audio Pipeline Controller
     function toggleAudioPlayback() {
       if (audioTrack.paused) {
         audioTrack.play();
