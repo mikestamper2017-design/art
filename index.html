@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Mike Stamper - Immersive Fine Art Archive</title>
   
-  <!-- Core WebAR Libraries -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
   
@@ -66,13 +65,12 @@
 </head>
 <body>
 
-  <!-- 1. DETACHED PROVENANCE ARCHIVE RECORD -->
   <div id="provenance-panel">
     <div class="prov-header">Registry Documentation</div>
     <h2 style="margin: 0 0 15px 0; font-size: 22px; font-weight: 500;">Certificate of Authenticity</h2>
     <div class="prov-divider"></div>
     <div class="prov-field"><strong>Artist:</strong> Mike Stamper</div>
-    <div class="prov-field"><strong>Signature:</strong> Verified Archival Markingsings</div>
+    <div class="prov-field"><strong>Signature:</strong> Verified Archival Markings</div>
     <div class="prov-field"><strong>Medium:</strong> Fine Art Selection</div>
     <div class="prov-field"><strong>Substrate:</strong> Premium Material Spec</div>
     <div class="prov-divider"></div>
@@ -81,10 +79,8 @@
     </div>
   </div>
 
-  <!-- 2. HIGH-PERFORMANCE AR INTERACTION VIEWPORT -->
   <div id="ar-viewport">
     
-    <!-- Audio Permissions Intercept Shield -->
     <div id="audio-gatekeeper" onclick="unlockAudioSystem()">
       <h2>Immersive Audio Enabled</h2>
       <p>Tap to initialize the camera system and activate the integrated audio soundscapes.</p>
@@ -93,45 +89,35 @@
 
     <div id="tracking-indicator">System: Initializing Lens</div>
 
-    <!-- Main AR Framework Matrix -->
     <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: false;" 
              embedded 
              renderer="colorManagement: true, physicallyCorrectLights: true" 
              vr-mode-ui="enabled: false" 
              device-orientation-permission-ui="enabled: false">
       
-      <!-- High-Fidelity Asset Pipeline -->
       <a-assets>
-        <!-- Target 0 Asset: Dynamic Video layer for Canvas Art -->
-        <video id="canvasVideo" src="./painting-video.mp4" preload="auto" loop="true" playsinline webkit-playsinline></video>
+        <video id="canvasVideo" src="./painting-video.mp4" preload="auto" loop="true" autoplay="true" muted="true" playsinline webkit-playsinline></video>
         
-        <!-- Target 1 Assets: Multi-Phase Photo array for Sculpture Processing -->
         <img id="sculpturePhase1" src="./phase-raw.jpg">
         <img id="sculpturePhase2" src="./phase-chisel.jpg">
         <img id="sculpturePhase3" src="./phase-finished.jpg">
         
-        <!-- Unified Audio Stream -->
         <audio id="artistNarrative" src="./audio-commentary.mp3" preload="auto"></audio>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <!-- TRACKING ANCHOR 0: THE PAINTING CANVAS -->
       <a-entity id="painting-anchor" mindar-image-target="targetIndex: 0">
-        <!-- Renders a standard widescreen video display plane perfectly parallel to target -->
         <a-video src="#canvasVideo" position="0 0 0" width="1" height="0.666"></a-video>
       </a-entity>
 
-      <!-- TRACKING ANCHOR 1: THE SCULPTURE COMPANION CARD -->
       <a-entity id="sculpture-anchor" mindar-image-target="targetIndex: 1">
-        <!-- Renders a perfectly square historical photo display plane over the card -->
         <a-image id="sculpture-render-plane" src="#sculpturePhase1" position="0 0 0" width="1" height="1"></a-image>
       </a-entity>
       
     </a-scene>
   </div>
 
-  <!-- 3. INTERACTIVE CONTROL & NARRATIVE DOCK -->
   <div id="media-dock">
     <div class="meta-block">
       <div>
@@ -140,7 +126,6 @@
       </div>
     </div>
 
-    <!-- Integrated Audio Control Strip -->
     <div class="audio-player-ui">
       <div class="audio-details">
         <span class="audio-title">The Artist's Perspective</span>
@@ -149,7 +134,6 @@
       <button id="audio-action-btn" class="audio-control-btn" onclick="toggleAudioPlayback()">Play Track</button>
     </div>
 
-    <!-- Dynamic Sculpture Timeline Interface Component -->
     <div id="sculpture-timeline" class="process-timeline">
       <div class="timeline-header">Material Evolution</div>
       <div class="step-grid">
@@ -159,7 +143,6 @@
       </div>
     </div>
 
-    <!-- Base Tab Grid Array -->
     <div class="control-row">
       <button id="tab-media" class="tab-trigger active" onclick="switchDockTab('media')">Live Media</button>
       <button id="tab-prov" class="tab-trigger" onclick="switchDockTab('provenance')">Provenance</button>
