@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Mike Stamper - Immersive Fine Art Archive</title>
   
+  <!-- Core WebAR Libraries -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
   
@@ -15,7 +16,7 @@
     /* AR Viewport Frame */
     #ar-viewport { width: 100vw; height: 70vh; position: relative; background-color: #000; }
     
-    /* Gatekeeper Tap-to-Start Shield (Crucial for iOS Safari Audio Permission) */
+    /* Gatekeeper Tap-to-Start Shield */
     #audio-gatekeeper { position: absolute; top: 0; left: 0; width: 100vw; height: 70vh; background: rgba(0,0,0,0.85); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff; text-align: center; padding: 20px; box-sizing: border-box; cursor: pointer; transition: opacity 0.4s ease; }
     #audio-gatekeeper h2 { font-size: 18px; font-weight: 400; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
     #audio-gatekeeper p { font-size: 13px; color: #aaa; margin: 0 0 20px 0; max-width: 280px; line-height: 1.5; }
@@ -65,6 +66,7 @@
 </head>
 <body>
 
+  <!-- 1. DETACHED PROVENANCE ARCHIVE RECORD -->
   <div id="provenance-panel">
     <div class="prov-header">Registry Documentation</div>
     <h2 style="margin: 0 0 15px 0; font-size: 22px; font-weight: 500;">Certificate of Authenticity</h2>
@@ -79,8 +81,10 @@
     </div>
   </div>
 
+  <!-- 2. HIGH-PERFORMANCE AR INTERACTION VIEWPORT -->
   <div id="ar-viewport">
     
+    <!-- Audio Permissions Intercept Shield -->
     <div id="audio-gatekeeper" onclick="unlockAudioSystem()">
       <h2>Immersive Audio Enabled</h2>
       <p>Tap to initialize the camera system and activate the integrated audio soundscapes.</p>
@@ -89,35 +93,45 @@
 
     <div id="tracking-indicator">System: Initializing Lens</div>
 
+    <!-- Main AR Framework Matrix -->
     <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: false;" 
              embedded 
              renderer="colorManagement: true, physicallyCorrectLights: true" 
              vr-mode-ui="enabled: false" 
              device-orientation-permission-ui="enabled: false">
       
+      <!-- High-Fidelity Asset Pipeline -->
       <a-assets>
-        <video id="canvasVideo" src="./painting-video.mp4" preload="auto" loop="true" autoplay="true" muted="true" playsinline webkit-playsinline></video>
+        <!-- Temporary cloud image to test camera rendering without video codec errors -->
+        <img id="testPaintingOverlay" src="https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=600">
         
+        <!-- Target 1 Assets: Multi-Phase Photo array for Sculpture Processing -->
         <img id="sculpturePhase1" src="./phase-raw.jpg">
         <img id="sculpturePhase2" src="./phase-chisel.jpg">
         <img id="sculpturePhase3" src="./phase-finished.jpg">
         
+        <!-- Unified Audio Stream -->
         <audio id="artistNarrative" src="./audio-commentary.mp3" preload="auto"></audio>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
+      <!-- TRACKING ANCHOR 0: THE PAINTING CANVAS -->
       <a-entity id="painting-anchor" mindar-image-target="targetIndex: 0">
-        <a-video src="#canvasVideo" position="0 0 0" width="1" height="0.666"></a-video>
+        <!-- Renders a flat image placeholder over your painting target to guarantee instant tracking visibility -->
+        <a-image src="#testPaintingOverlay" position="0 0 0" width="1" height="0.666"></a-image>
       </a-entity>
 
+      <!-- TRACKING ANCHOR 1: THE SCULPTURE COMPANION CARD -->
       <a-entity id="sculpture-anchor" mindar-image-target="targetIndex: 1">
+        <!-- Renders a perfectly square historical photo display plane over the card -->
         <a-image id="sculpture-render-plane" src="#sculpturePhase1" position="0 0 0" width="1" height="1"></a-image>
       </a-entity>
       
     </a-scene>
   </div>
 
+  <!-- 3. INTERACTIVE CONTROL & NARRATIVE DOCK -->
   <div id="media-dock">
     <div class="meta-block">
       <div>
@@ -126,6 +140,7 @@
       </div>
     </div>
 
+    <!-- Integrated Audio Control Strip -->
     <div class="audio-player-ui">
       <div class="audio-details">
         <span class="audio-title">The Artist's Perspective</span>
@@ -134,6 +149,7 @@
       <button id="audio-action-btn" class="audio-control-btn" onclick="toggleAudioPlayback()">Play Track</button>
     </div>
 
+    <!-- Dynamic Sculpture Timeline Interface Component -->
     <div id="sculpture-timeline" class="process-timeline">
       <div class="timeline-header">Material Evolution</div>
       <div class="step-grid">
@@ -143,6 +159,7 @@
       </div>
     </div>
 
+    <!-- Base Tab Grid Array -->
     <div class="control-row">
       <button id="tab-media" class="tab-trigger active" onclick="switchDockTab('media')">Live Media</button>
       <button id="tab-prov" class="tab-trigger" onclick="switchDockTab('provenance')">Provenance</button>
@@ -157,7 +174,7 @@
     const trackingLabel = document.getElementById('tracking-indicator');
     
     // Application Interaction State Tracking
-    let activeTargetMode = 'painting'; // Alternates dynamically between 'painting' and 'sculpture'
+    let activeTargetMode = 'painting'; 
 
     // Device Audio System Bootstrapper Configuration
     function unlockAudioSystem() {
@@ -180,7 +197,6 @@
     document.addEventListener("DOMContentLoaded", () => {
       const paintingTarget = document.getElementById('painting-anchor');
       const sculptureTarget = document.getElementById('sculpture-anchor');
-      const videoAsset = document.getElementById('canvasVideo');
 
       // Painting Visual Target Detection Events
       paintingTarget.addEventListener("targetFound", () => {
@@ -189,11 +205,9 @@
         document.getElementById('ui-title').innerText = "Serenity in the Muskokas";
         document.getElementById('ui-subtext').innerText = "Original Watercolor Canvas Layer";
         document.getElementById('sculpture-timeline').style.display = 'none';
-        videoAsset.play();
       });
       paintingTarget.addEventListener("targetLost", () => {
         trackingLabel.innerText = "System: Scanning Scene";
-        videoAsset.pause();
       });
 
       // Sculpture Visual Target Detection Events
