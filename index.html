@@ -10,76 +10,29 @@
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
   
   <style>
-    /* Reset & Core Canvas Dimensions */
-    body, html { 
-      margin: 0; 
-      padding: 0; 
-      width: 100%; 
-      height: 100%; 
-      overflow: hidden; 
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-      background-color: transparent !important;
-    }
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: transparent !important; }
+    #ar-viewport { width: 100vw; height: 70vh; position: relative; background-color: transparent !important; }
+    a-scene canvas { background-color: transparent !important; z-index: 1; }
     
-    /* AR Viewport Frame */
-    #ar-viewport { 
-      width: 100vw; 
-      height: 70vh; 
-      position: relative; 
-      background-color: transparent !important;
-    }
-    
-    /* Force underlying engine canvas to honor transparency */
-    a-scene canvas {
-      background-color: transparent !important;
-      z-index: 1;
-    }
-    
-    /* Gatekeeper Tap-to-Start Shield */
-    #audio-gatekeeper { position: absolute; top: 0; left: 0; width: 100vw; height: 70vh; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff; text-align: center; padding: 20px; box-sizing: border-box; cursor: pointer; transition: opacity 0.4s ease; }
+    #audio-gatekeeper { position: absolute; top: 0; left: 0; width: 100vw; height: 70vh; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff; text-align: center; padding: 20px; box-sizing: border-box; cursor: pointer; }
     #audio-gatekeeper h2 { font-size: 18px; font-weight: 400; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
     #audio-gatekeeper p { font-size: 13px; color: #aaa; margin: 0 0 20px 0; max-width: 280px; line-height: 1.5; }
     .gatekeeper-btn { background: #ffffff; color: #000000; border: none; padding: 12px 28px; font-size: 14px; font-weight: 500; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px; }
 
-    /* Minimalist Technical Info Overlay */
     #tracking-indicator { position: absolute; top: 15px; left: 15px; background: rgba(0, 0, 0, 0.6); color: #fff; padding: 6px 12px; font-size: 11px; border-radius: 12px; letter-spacing: 1px; text-transform: uppercase; z-index: 100; pointer-events: none; border: 1px solid rgba(255,255,255,0.15); }
+    #media-dock { width: 100vw; height: 30vh; background-color: #ffffff; position: absolute; bottom: 0; left: 0; z-index: 1000; box-sizing: border-box; padding: 22px 24px; display: flex; flex-direction: column; justify-content: space-between; border-top: 1px solid #eaeaea; }
     
-    /* Premium Multi-Mode Media Dock */
-    #media-dock { width: 100vw; height: 30vh; background-color: #ffffff; position: absolute; bottom: 0; left: 0; z-index: 1000; box-sizing: border-box; padding: 22px 24px; display: flex; flex-direction: column; justify-content: space-between; border-top: 1px solid #eaeaea; box-shadow: 0 -8px 24px rgba(0,0,0,0.04); }
-    
-    /* Header Metadata Area */
     .meta-block { display: flex; justify-content: space-between; align-items: flex-start; }
     .art-title { font-size: 19px; font-weight: 600; color: #111111; margin: 0; letter-spacing: -0.3px; }
-    .art-collection { font-size: 13px; color: #777777; margin: 4px 0 0 0; font-weight: 400; }
+    .art-collection { font-size: 13px; color: #777777; margin: 4px 0 0 0; }
     
-    /* Audio System Player Component */
-    .audio-player-ui { background: #f5f5f7; padding: 12px 16px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
-    .audio-details { display: flex; flex-direction: column; }
-    .audio-title { font-size: 13px; font-weight: 600; color: #111; }
-    .audio-subtitle { font-size: 11px; color: #666; margin-top: 2px; }
-    .audio-control-btn { background: #000000; color: #ffffff; border: none; padding: 8px 18px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: background 0.2s; }
-    .audio-control-btn:active { background: #333333; }
-
-    /* Navigational Tab Array */
     .control-row { display: flex; gap: 10px; margin-top: auto; }
-    .tab-trigger { flex: 1; padding: 12px; border: 1px solid #111111; background: transparent; color: #111111; font-weight: 500; font-size: 13px; border-radius: 6px; cursor: pointer; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s ease; }
+    .tab-trigger { flex: 1; padding: 12px; border: 1px solid #111111; background: transparent; color: #111111; font-weight: 500; font-size: 13px; border-radius: 6px; cursor: pointer; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; }
     .tab-trigger.active { background: #111111; color: #ffffff; }
 
-    /* Sculpture Process Progression Timeline */
-    .process-timeline { display: none; width: 100%; flex-direction: column; gap: 8px; margin-top: 10px; }
-    .timeline-header { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #666; font-weight: 600; }
-    .step-grid { display: flex; gap: 8px; width: 100%; }
-    .step-node { flex: 1; padding: 10px; border: 1px solid #d2d2d7; background: #ffffff; color: #333; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; text-align: center; transition: all 0.2s; }
-    .step-node.active { background: #000000; color: #ffffff; border-color: #000000; }
-
-    /* Immersive Document Slide-Over (Provenance Panel) */
-    #provenance-panel { display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 70vh; background: rgba(255, 255, 255, 0.98); z-index: 1500; box-sizing: border-box; padding: 40px 30px; overflow-y: auto; color: #111111; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    
+    #provenance-panel { display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 70vh; background: rgba(255, 255, 255, 0.98); z-index: 1500; box-sizing: border-box; padding: 40px 30px; overflow-y: auto; color: #111111; }
     .prov-header { text-transform: uppercase; letter-spacing: 2px; font-size: 13px; color: #666666; margin: 0 0 4px 0; font-weight: 600; }
     .prov-divider { border: 0; border-top: 1px solid #e5e5e5; margin: 18px 0; }
-    .prov-field { font-size: 14px; margin: 10px 0; line-height: 1.4; color: #333; }
-    .prov-field strong { color: #000; font-weight: 600; display: inline-block; width: 110px; }
     .prov-narrative { margin-top: 24px; font-style: italic; color: #444444; line-height: 1.6; font-size: 14px; background: #f5f5f7; padding: 16px; border-radius: 8px; border-left: 3px solid #111; }
   </style>
 </head>
@@ -89,54 +42,21 @@
     <div class="prov-header">Registry Documentation</div>
     <h2 style="margin: 0 0 15px 0; font-size: 22px; font-weight: 500;">Certificate of Authenticity</h2>
     <div class="prov-divider"></div>
-    <div class="prov-field"><strong>Artist:</strong> Mike Stamper</div>
-    <div class="prov-field"><strong>Signature:</strong> Verified Archival Markings</div>
-    <div class="prov-field"><strong>Medium:</strong> Fine Art Selection</div>
-    <div class="prov-field"><strong>Substrate:</strong> Premium Material Spec</div>
-    <div class="prov-divider"></div>
-    <div class="prov-narrative" id="prov-text">
-      "This work chronicles the shifting geological or natural textures observed during field research, translated through meticulous structural framing to document the physical environment."
-    </div>
+    <div id="prov-content" class="prov-narrative">Scan an artwork target image link to view certified documentation metadata.</div>
   </div>
 
   <div id="ar-viewport">
-    
-    <div id="audio-gatekeeper" onclick="unlockAudioSystem()">
-      <h2>Immersive Audio Enabled</h2>
-      <p>Tap to initialize the camera system and activate the integrated audio soundscapes.</p>
+    <div id="audio-gatekeeper" onclick="initializeStudioGallery()">
+      <h2>Studio Immersive Viewer</h2>
+      <p>Tap to grant camera tracking initialization clearance parameters.</p>
       <button class="gatekeeper-btn">Enter Gallery</button>
     </div>
 
-    <div id="tracking-indicator">System: Initializing Lens</div>
+    <div id="tracking-indicator">System: Offline</div>
 
-    <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; filterMinCF:0.001; filterBeta: 1000;" 
-             embedded 
-             color-space="sRGB"
-             renderer="colorManagement: true, physicallyCorrectLights: true, alpha: true, antialias: true" 
-             vr-mode-ui="enabled: false" 
-             device-orientation-permission-ui="enabled: false">
-      
-      <a-assets>
-        <video id="canvasVideo" src="./painting-video.mp4" preload="auto" loop="true" autoplay="true" muted="true" playsinline webkit-playsinline></video>
-        
-        <img id="sculpturePhase1" src="./phase-raw.jpg">
-        <img id="sculpturePhase2" src="./phase-chisel.jpg">
-        <img id="sculpturePhase3" src="./phase-finished.jpg">
-        
-        <audio id="audioPainting" src="./audio-commentary.mp3" preload="auto"></audio>
-        <audio id="audioSculpture" src="./audio-commentary.mp3" preload="auto"></audio>
-      </a-assets>
-
+    <a-scene embedded color-space="sRGB" renderer="alpha: true, antialias: true" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
-      <a-entity id="painting-anchor" mindar-image-target="targetIndex: 0">
-        <a-video src="#canvasVideo" position="0 0 0" width="1" height="0.666"></a-video>
-      </a-entity>
-
-      <a-entity id="sculpture-anchor" mindar-image-target="targetIndex: 1">
-        <a-image id="sculpture-render-plane" src="#sculpturePhase1" position="0 0 0" width="1" height="1"></a-image>
-      </a-entity>
-      
+      <a-assets id="dynamic-assets"></a-assets>
     </a-scene>
   </div>
 
@@ -144,27 +64,9 @@
     <div class="meta-block">
       <div>
         <h1 class="art-title" id="ui-title">Studio Showcase Collection</h1>
-        <p class="art-collection" id="ui-subtext">Scan an artwork to begin</p>
+        <p class="art-collection" id="ui-subtext">Scan an artwork to activate video layer overlay</p>
       </div>
     </div>
-
-    <div class="audio-player-ui">
-      <div class="audio-details">
-        <span class="audio-title" id="audio-track-title">The Artist's Perspective</span>
-        <span class="audio-subtitle" id="audio-status">No artwork scanned</span>
-      </div>
-      <button id="audio-action-btn" class="audio-control-btn" onclick="toggleAudioPlayback()" disabled style="opacity: 0.5;">Play Track</button>
-    </div>
-
-    <div id="sculpture-timeline" class="process-timeline">
-      <div class="timeline-header">Material Evolution</div>
-      <div class="step-grid">
-        <button id="step1" class="step-node active" onclick="setSculpturePhase(1)">1. Raw Stone</button>
-        <button id="step2" class="step-node" onclick="setSculpturePhase(2)">2. Work-In-Progress</button>
-        <button id="step3" class="step-node" onclick="setSculpturePhase(3)">3. Final Form</button>
-      </div>
-    </div>
-
     <div class="control-row">
       <button id="tab-media" class="tab-trigger active" onclick="switchDockTab('media')">Live Media</button>
       <button id="tab-prov" class="tab-trigger" onclick="switchDockTab('provenance')">Provenance</button>
@@ -172,147 +74,81 @@
   </div>
 
   <script>
-    // Audio elements routing variables
-    const audioPainting = document.getElementById('audioPainting');
-    const audioSculpture = document.getElementById('audioSculpture');
-    let currentActiveAudio = null; // Dynamically updated based on tracking target
-
-    const audioActionBtn = document.getElementById('audio-action-btn');
-    const audioStatusText = document.getElementById('audio-status');
+    let studioInventory = [];
     const trackingLabel = document.getElementById('tracking-indicator');
-    const videoAsset = document.getElementById('canvasVideo');
-    
-    let activeTargetMode = 'none'; 
 
-    function unlockAudioSystem() {
+    // Fetch the automated database configuration directly upon interface mount
+    document.addEventListener("DOMContentLoaded", async () => {
+      try {
+        const response = await fetch('./artworks.json');
+        studioInventory = await response.json();
+        buildARTrackingMatrix(studioInventory);
+      } catch (err) {
+        trackingLabel.innerText = "Database Load Error";
+      }
+    });
+
+    function buildARTrackingMatrix(inventory) {
+      const assetsContainer = document.getElementById('dynamic-assets');
+      const sceneElement = document.querySelector('a-scene');
+
+      inventory.forEach((item, index) => {
+        // 1. Generate local browser video stream element hooks
+        const videoElement = document.createElement('video');
+        videoElement.setAttribute('id', `vid-${index}`);
+        videoElement.setAttribute('src', `./${item.video}`);
+        videoElement.setAttribute('preload', 'auto');
+        videoElement.setAttribute('loop', 'true');
+        videoElement.setAttribute('muted', 'true');
+        videoElement.setAttribute('playsinline', '');
+        videoElement.setAttribute('webkit-playsinline', '');
+        assetsContainer.appendChild(videoElement);
+
+        // 2. Generate MindAR Live Anchor Object
+        const anchorEntity = document.createElement('a-entity');
+        // Pointing directly to the raw target image file paths hosted right inside your directory
+        anchorEntity.setAttribute('mindar-image-target', `imageTargetSrc: ./${item.image}`);
+
+        const videoPlane = document.createElement('a-video');
+        videoPlane.setAttribute('src', `#vid-${index}`);
+        videoPlane.setAttribute('position', '0 0 0');
+        videoPlane.setAttribute('width', '1');
+        videoPlane.setAttribute('height', '0.666'); // Adjust height proportions dynamically as needed
+        anchorEntity.appendChild(videoPlane);
+
+        // 3. Attach tracking state event triggers dynamically
+        anchorEntity.addEventListener("targetFound", () => {
+          trackingLabel.innerText = `Target Detected`;
+          document.getElementById('ui-title').innerText = item.title;
+          document.getElementById('ui-subtext').innerText = item.subtext;
+          document.getElementById('prov-content').innerText = item.provenance;
+          videoElement.play();
+        });
+
+        anchorEntity.addEventListener("targetLost", () => {
+          trackingLabel.innerText = "System: Scanning Scene";
+          videoElement.pause();
+        });
+
+        sceneElement.appendChild(anchorEntity);
+      });
+    }
+
+    function initializeStudioGallery() {
       const shield = document.getElementById('audio-gatekeeper');
       shield.style.opacity = '0';
       setTimeout(() => shield.style.display = 'none', 400);
-      
-      // Warm up video container trigger block
-      videoAsset.play().then(() => { videoAsset.pause(); }).catch(e => {});
 
-      // Warm up both audio context streams to comply with mobile privacy locks
-      audioPainting.play().then(() => { audioPainting.pause(); audioPainting.currentTime = 0; }).catch(e => {});
-      audioSculpture.play().then(() => { audioSculpture.pause(); audioSculpture.currentTime = 0; }).catch(e => {});
-      
+      // Trigger all built video element streams instantly inside touch event block to bypass mobile privacy blocks
+      studioInventory.forEach((item, index) => {
+        const vid = document.getElementById(`vid-${index}`);
+        if(vid) { vid.play().then(() => { vid.pause(); }).catch(e => {}); }
+      });
+
+      // Launch MindAR engine mapping layer tracking execution pipeline
       const sceneEl = document.querySelector('a-scene');
-      sceneEl.systems["mindar-image-system"].start();
-      trackingLabel.innerText = "System: Ready to Scan";
-      audioStatusText.innerText = "Ready to scan artwork";
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      const paintingTarget = document.getElementById('painting-anchor');
-      const sculptureTarget = document.getElementById('sculpture-anchor');
-
-      // PAINTING TRACKING DISCOVERY MATRIX
-      paintingTarget.addEventListener("targetFound", () => {
-        // Stop any conflicting audio playback streams immediately
-        stopAllAudioPlayback();
-
-        trackingLabel.innerText = "Target: Painting Active";
-        activeTargetMode = 'painting';
-        currentActiveAudio = audioPainting; // Route control button to the painting commentary file
-        
-        // Update Metadata Fields
-        document.getElementById('ui-title').innerText = "Serenity in the Muskokas";
-        document.getElementById('ui-subtext').innerText = "Original Watercolor Canvas Layer";
-        document.getElementById('prov-text').innerText = "\"Serenity in the Muskokas captures the early morning fog breaking across the open lake channels, painted on-site using standard wet-on-wet watercolor washing techniques.\"";
-        document.getElementById('sculpture-timeline').style.display = 'none';
-        
-        // UI Player Unlock
-        audioActionBtn.removeAttribute('disabled');
-        audioActionBtn.style.opacity = "1";
-        audioActionBtn.innerText = "Play Commentary";
-        audioStatusText.innerText = "Commentary track available";
-
-        // Start muted background loop video overlay
-        videoAsset.muted = true;
-        videoAsset.play();
-      });
-      
-      paintingTarget.addEventListener("targetLost", () => {
-        trackingLabel.innerText = "System: Scanning Scene";
-        videoAsset.pause();
-        stopAllAudioPlayback();
-        resetPlayerToIdle();
-      });
-
-      // SCULPTURE TRACKING DISCOVERY MATRIX
-      sculptureTarget.addEventListener("targetFound", () => {
-        stopAllAudioPlayback();
-
-        trackingLabel.innerText = "Target: Sculpture Active";
-        activeTargetMode = 'sculpture';
-        currentActiveAudio = audioSculpture; // Route control button to the sculpture commentary file
-        
-        // Update Metadata Fields
-        document.getElementById('ui-title').innerText = "Abstract Geometries in Soapstone";
-        document.getElementById('ui-subtext').innerText = "Hand-Carved Canadian Soapstone Form";
-        document.getElementById('prov-text').innerText = "\"Hand-carved out of a raw solid block of dark Canadian soapstone, exploring the clean intersection of minimalist curved edge-lines and empty volumetric negative space.\"";
-        document.getElementById('sculpture-timeline').style.display = 'flex';
-        
-        // UI Player Unlock
-        audioActionBtn.removeAttribute('disabled');
-        audioActionBtn.style.opacity = "1";
-        audioActionBtn.innerText = "Play Commentary";
-        audioStatusText.innerText = "Commentary track available";
-      });
-
-      sculptureTarget.addEventListener("targetLost", () => {
-        trackingLabel.innerText = "System: Scanning Scene";
-        stopAllAudioPlayback();
-        resetPlayerToIdle();
-      });
-    });
-
-    // Centralized Playback Toggle Engine Hook
-    function toggleAudioPlayback() {
-      if (!currentActiveAudio) return;
-
-      if (currentActiveAudio.paused) {
-        currentActiveAudio.play();
-        audioActionBtn.innerText = "Pause";
-        audioStatusText.innerText = "Playing narrative track...";
-      } else {
-        currentActiveAudio.pause();
-        audioActionBtn.innerText = "Play Commentary";
-        audioStatusText.innerText = "Audio paused";
-      }
-    }
-
-    // Explicit Safety Kill Switch Functions
-    function stopAllAudioPlayback() {
-      audioPainting.pause();
-      audioSculpture.pause();
-      audioActionBtn.innerText = "Play Commentary";
-    }
-
-    function resetPlayerToIdle() {
-      audioStatusText.innerText = "Artwork lost. Scan to resume.";
-      audioActionBtn.setAttribute('disabled', 'true');
-      audioActionBtn.style.opacity = "0.5";
-      currentActiveAudio = null;
-    }
-
-    function setSculpturePhase(phaseIndex) {
-      const displayPlane = document.getElementById('sculpture-render-plane');
-      
-      document.getElementById('step1').classList.remove('active');
-      document.getElementById('step2').classList.remove('active');
-      document.getElementById('step3').classList.remove('active');
-      
-      if (phaseIndex === 1) {
-        displayPlane.setAttribute('src', '#sculpturePhase1');
-        document.getElementById('step1').classList.add('active');
-      } else if (phaseIndex === 2) {
-        displayPlane.setAttribute('src', '#sculpturePhase2');
-        document.getElementById('step2').classList.add('active');
-      } else if (phaseIndex === 3) {
-        displayPlane.setAttribute('src', '#sculpturePhase3');
-        document.getElementById('step3').classList.add('active');
-      }
+      sceneEl.setAttribute('mindar-image', 'autoStart: true; filterMinCF:0.001; filterBeta: 1000;');
+      trackingLabel.innerText = "System: Lens Active";
     }
 
     function switchDockTab(selectedTab) {
