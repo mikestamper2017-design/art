@@ -54,7 +54,7 @@
 
     <div id="tracking-indicator">System: Offline</div>
 
-    <a-scene mindar-image="autoStart: false; filterMinCF:0.001; filterBeta: 1000;" embedded color-space="sRGB" renderer="alpha: true, antialias: true" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; filterMinCF:0.001; filterBeta: 1000;" embedded color-space="sRGB" renderer="alpha: true, antialias: true" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       <a-assets id="dynamic-assets"></a-assets>
     </a-scene>
@@ -106,9 +106,9 @@
         videoElement.setAttribute('webkit-playsinline', '');
         assetsContainer.appendChild(videoElement);
 
-        // 2. Set up image targets mapped directly to uploaded images
+        // 2. Set up image targets tied explicitly to compiled file index order positions
         const anchorEntity = document.createElement('a-entity');
-        anchorEntity.setAttribute('mindar-image-target', `imageTargetSrc: ./${item.image}`);
+        anchorEntity.setAttribute('mindar-image-target', `targetIndex: ${index}`);
 
         const videoPlane = document.createElement('a-video');
         videoPlane.setAttribute('src', `#vid-${index}`);
