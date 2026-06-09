@@ -3,176 +3,224 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Studio Registry — Artwork Management Dashboard</title>
+  <title>Studio Registry - Automated AR Compiler Dashboard</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js"></script>
+  
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f7; margin: 0; padding: 40px 20px; color: #111; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f5f5f7; margin: 0; padding: 40px 20px; color: #111; }
     .container { max-width: 600px; background: #fff; margin: 0 auto; padding: 32px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
-    h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.5px; margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 16px; }
+    h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.5px; margin-top: 0; margin-bottom: 6px; }
+    p.subtitle { color: #666; font-size: 14px; margin-0 0 24px 0; line-height: 1.4; }
     .form-group { margin-bottom: 20px; }
-    label { display: block; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #555; margin-bottom: 6px; }
-    input[type="text"], textarea, input[type="password"] { width: 100%; padding: 12px; border: 1px solid #d2d2d7; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
-    textarea { height: 100px; resize: vertical; }
-    .btn { background: #000; color: #fff; border: none; width: 100%; padding: 14px; font-size: 15px; font-weight: 500; border-radius: 6px; cursor: pointer; margin-top: 10px; transition: background 0.2s; }
-    .btn:hover { background: #222; }
-    #status-msg { margin-top: 20px; padding: 12px; border-radius: 6px; display: none; font-size: 14px; text-align: center; line-height: 1.4; }
-    .success { background: #e2f6ea; color: #137e3d; }
-    .error { background: #fde8e8; color: #c81e1e; }
+    label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; color: #444; }
+    input[type='text'], textarea, input[type='password'] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+    textarea { height: 90px; resize: vertical; }
+    .file-input-wrapper { background: #fafafa; border: 1px dashed #ccc; padding: 16px; border-radius: 6px; text-align: center; cursor: pointer; position: relative; }
+    .file-input-wrapper input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+    .btn { background: #000; color: #fff; border: none; width: 100%; padding: 14px; font-size: 14px; font-weight: 600; border-radius: 6px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 10px; transition: background 0.2s ease; }
+    .btn:disabled { background: #999; cursor: not-allowed; }
+    
+    #status-sheet { padding: 14px; border-radius: 6px; font-size: 13px; font-weight: 500; margin-top: 20px; display: none; line-height: 1.5; }
+    .status-processing { background: #e3f2fd; color: #0d47a1; border: 1px solid #bbdefb; }
+    .status-success { background: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9; }
+    .status-error { background: #ffebee; color: #b71c1c; border: 1px solid #ffcdd2; }
   </style>
 </head>
 <body>
 
-<div class="container">
-  <h1>Studio Registry</h1>
-  <p style="color:#666; font-size:14px; margin-top:-10px; margin-bottom:24px;">Upload new artwork targets and video overlays straight to your gallery.</p>
-  
-  <div class="form-group">
-    <label>GitHub Access Token</label>
-    <input type="password" id="gh-token" placeholder="Paste your classic secret token here">
-  </div>
-  
-  <hr style="border:0; border-top:1px solid #eee; margin:24px 0;">
-
-  <div class="form-group">
-    <label>Artwork Title</label>
-    <input type="text" id="art-title" placeholder="e.g., Abstract Geometries">
-  </div>
-
-  <div class="form-group">
-    <label>Medium / Subtext</label>
-    <input type="text" id="art-subtext" placeholder="e.g., Hand-Carved Canadian Soapstone">
-  </div>
-
-  <div class="form-group">
-    <label>Provenance Narrative Documentation</label>
-    <textarea id="art-provenance" placeholder="Describe the background story and creation process details..."></textarea>
-  </div>
-
-  <div class="form-group">
-    <label>Target Tracking Image File (.jpg only)</label>
-    <input type="file" id="file-target" accept="image/jpeg">
-  </div>
-
-  <div class="form-group">
-    <label>Video Layer Overlay (.mp4 only)</label>
-    <input type="file" id="file-video" accept="video/mp4">
-  </div>
-
-  <button class="btn" onclick="processStudioUpload()">Publish to Immersive Gallery</button>
-  
-  <div id="status-msg"></div>
-</div>
-
-<script>
-  // Tailored User Parameters for your account profile layout
-  const GITHUB_USER = "mikestamper2017-design"; 
-  const GITHUB_REPO = "art"; 
-
-  async function processStudioUpload() {
-    const token = document.getElementById('gh-token').value.trim();
-    const title = document.getElementById('art-title').value.trim();
-    const subtext = document.getElementById('art-subtext').value.trim();
-    const provenance = document.getElementById('art-provenance').value.trim();
-    const targetFile = document.getElementById('file-target').files[0];
-    const videoFile = document.getElementById('file-video').files[0];
+  <div class="container">
+    <h1>Studio Registry</h1>
+    <p class="subtitle">Upload artwork parameters. The background compiler builds tracking vectors directly from your canvas photo instantly.</p>
     
-    if(!token || !title || !targetFile || !videoFile) {
-      showStatus("Please complete all required fields and insert your security token.", "error");
-      return;
+    <div class="form-group">
+      <label>GitHub Access Token</label>
+      <input type="password" id="gh-token" placeholder="Paste security variable identifier keys...">
+    </div>
+
+    <div class="form-group">
+      <label>Artwork Title</label>
+      <input type="text" id="art-title" placeholder="e.g., Twin Pines">
+    </div>
+
+    <div class="form-group">
+      <label>Medium / Subtext</label>
+      <input type="text" id="art-subtext" placeholder="e.g., Acrylic on Canvas">
+    </div>
+
+    <div class="form-group">
+      <label>Provenance Narrative Documentation</label>
+      <textarea id="art-provenance" placeholder="Describe historical, thematic registry markers..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Target Tracking Image File (.JPG Only)</label>
+      <div class="file-input-wrapper">
+        <span id="label-image">Select Raw Target Image</span>
+        <input type="file" id="file-target" accept="image/jpeg, image/jpg" onchange="updateFileLabel('file-target', 'label-image')">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Video Layer Overlay (.MP4 Only)</label>
+      <div class="file-input-wrapper">
+        <span id="label-video">Select Motion Asset</span>
+        <input type="file" id="file-video" accept="video/mp4" onchange="updateFileLabel('file-video', 'label-video')">
+      </div>
+    </div>
+
+    <button id="submit-btn" class="btn" onclick="processStudioUpload()">Publish to Immersive Gallery</button>
+    
+    <div id="status-sheet"></div>
+  </div>
+
+  <script>
+    const GITHUB_USER = "mikestamper2017-design";
+    const GITHUB_REPO = "art";
+
+    function updateFileLabel(inputId, labelId) {
+      const file = document.getElementById(inputId).files[0];
+      document.getElementById(labelId).innerText = file ? file.name : "Select File";
     }
 
-    showStatus("Initializing asset compilation payload...", "success");
+    function showStatus(msg, type) {
+      const box = document.getElementById('status-sheet');
+      box.innerText = msg;
+      box.className = `status-${type}`;
+      box.style.display = 'block';
+    }
 
-    try {
+    async function processStudioUpload() {
+      const token = document.getElementById('gh-token').value.trim();
+      const title = document.getElementById('art-title').value.trim();
+      const subtext = document.getElementById('art-subtext').value.trim();
+      const provenance = document.getElementById('art-provenance').value.trim();
+      const targetFile = document.getElementById('file-target').files[0];
+      const videoFile = document.getElementById('file-video').files[0];
+      const btn = document.getElementById('submit-btn');
+
+      if (!token || !title || !targetFile || !videoFile) {
+        showStatus("Please ensure token, title, and both structural files are allocated.", "error");
+        return;
+      }
+
+      btn.disabled = true;
       const assetSlug = title.toLowerCase().replace(/[^a-z0-9]/g, "-");
       const videoName = `video-${assetSlug}.mp4`;
       const imageName = `target-${assetSlug}.jpg`;
 
-      const targetBase64 = await convertFileToBase64(targetFile);
-      const videoBase64 = await convertFileToBase64(videoFile);
+      try {
+        // Step 1: Initialize local in-browser compilation mechanics
+        showStatus("Phase 1: Local compilation worker threading active. Building feature maps...", "processing");
+        const trackingBuffer = await compileImageToMindBuffer(targetFile);
 
-      // 1. Send Video file to GitHub
-      showStatus(`Processing Stream: Uploading ${videoName}...`, "success");
-      await uploadToGitHub(token, videoName, videoBase64, `Upload video overlay for ${title}`);
+        // Step 2: Convert assets to transmission formats
+        showStatus("Phase 2: Compressing binary payload allocations...", "processing");
+        const videoBase64 = await convertFileToBase64(videoFile);
+        const imageBase64 = await convertFileToBase64(targetFile);
+        const mindBase64 = btoa(String.fromCharCode(...new Uint8Array(trackingBuffer)));
 
-      // 2. Send Image file to GitHub
-      showStatus(`Processing Stream: Uploading ${imageName}...`, "success");
-      await uploadToGitHub(token, imageName, targetBase64, `Upload tracking image for ${title}`);
+        // Step 3: Stream physical video layer up
+        showStatus(`Phase 3: Uploading motion layer: ${videoName}...`, "processing");
+        await pushFileToGitHub(token, videoName, videoBase64, `Upload video layer for ${title}`);
 
-      // 3. Download, modify, and push updated artworks.json ledger
-      showStatus("Synchronizing studio ledger database (artworks.json)...", "success");
-      await updateLedgerDatabase(token, {
-        title: title,
-        subtext: subtext,
-        provenance: provenance,
-        image: imageName,
-        video: videoName
-      });
+        // Step 4: Stream backup target image layer up
+        showStatus(`Phase 4: Storing reference tracking snapshot: ${imageName}...`, "processing");
+        await pushFileToGitHub(token, imageName, imageBase64, `Upload tracking reference for ${title}`);
 
-      showStatus("Gallery entry published completely! Give GitHub Pages 60 seconds to compile, then refresh your app.", "success");
-    } catch (err) {
-      showStatus(`Transmission Fault: ${err.message}`, "error");
+        // Step 5: Overwrite master compiled binary file map
+        showStatus("Phase 5: Syncing global tracking data matrices (.mind file)...", "processing");
+        await pushFileToGitHub(token, "targets.mind", mindBase64, `Update compiled tracking profile index mappings for ${title}`);
+
+        // Step 6: Update structural ledger array records
+        showStatus("Phase 6: Logging records into central registry ledger matrix...", "processing");
+        await appendRecordToLedger(token, { title, subtext, provenance, image: imageName, video: videoName });
+
+        showStatus("Gallery profile successfully compiled and published! Give GitHub 60 seconds to refresh, then test your camera viewer.", "success");
+        document.getElementById('art-title').value = '';
+        document.getElementById('art-subtext').value = '';
+        document.getElementById('art-provenance').value = '';
+      } catch (err) {
+        showStatus(`Compilation Fault: ${err.message}`, "error");
+      } finally {
+        btn.disabled = false;
+      }
     }
-  }
 
-  function convertFileToBase64(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result.split(',')[1]); 
-      reader.onerror = error => reject(error);
-    });
-  }
+    // MindAR engine local runtime compilation adapter logic
+    function compileImageToMindBuffer(file) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+        img.onload = async () => {
+          try {
+            const compiler = new window.MINDAR.IMAGE.Compiler();
+            // Process canvas dimensional scales dynamically to structure control maps
+            const trackingData = await compiler.compileImageTargets([img], (progress) => {
+              showStatus(`Phase 1: Feature processing calculation: ${Math.round(progress)}%`, "processing");
+            });
+            const buffer = compiler.exportData(trackingData);
+            resolve(buffer);
+          } catch (e) { reject(e); }
+        };
+        img.onerror = () => reject(new Error("Failed to map spatial image contours. Use standard RGB profiles."));
+      });
+    }
 
-  async function uploadToGitHub(token, filename, base64Content, commitMessage) {
-    const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${filename}`;
-    let sha = null;
-    try {
+    function convertFileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = error => reject(error);
+      });
+    }
+
+    async function pushFileToGitHub(token, filename, base64Content, commitMsg) {
+      const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${filename}`;
+      let sha = null;
+
+      try {
+        const res = await fetch(url, { headers: { "Authorization": `token ${token}` } });
+        if (res.ok) {
+          const data = await res.json();
+          sha = data.sha;
+        }
+      } catch (e) {}
+
+      const body = { message: commitMsg, content: base64Content };
+      if (sha) body.sha = sha;
+
+      const res = await fetch(url, {
+        method: "PUT",
+        headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) throw new Error(`Repository architecture upload failed for asset entity: ${filename}`);
+    }
+
+    async function appendRecordToLedger(token, newArtwork) {
+      const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/artworks.json`;
+      let sha = null;
+      let inventory = [];
+
       const res = await fetch(url, { headers: { "Authorization": `token ${token}` } });
-      if (res.ok) { const data = await res.json(); sha = data.sha; }
-    } catch(e) {}
+      if (res.ok) {
+        const data = await res.json();
+        sha = data.sha;
+        inventory = JSON.parse(atob(data.content));
+      }
 
-    const body = { message: commitMessage, content: base64Content };
-    if (sha) body.sha = sha;
+      inventory.push(newArtwork);
+      const updatedBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(inventory, null, 2))));
 
-    const response = await fetch(url, {
-      method: "PUT",
-      headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
-    if(!response.ok) throw new Error("Asset transfer rejected by GitHub file system parameters.");
-  }
-
-  async function updateLedgerDatabase(token, newArtworkObj) {
-    const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/artworks.json`;
-    
-    const res = await fetch(url, { headers: { "Authorization": `token ${token}` } });
-    if(!res.ok) throw new Error("Ledger database file (artworks.json) missing from repository root.");
-    
-    const fileData = await res.json();
-    const currentLedger = JSON.parse(atob(fileData.content));
-    
-    currentLedger.push(newArtworkObj);
-    
-    const updatedBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(currentLedger, null, 2))));
-    
-    const response = await fetch(url, {
-      method: "PUT",
-      headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: `Automated inventory addition: ${newArtworkObj.title}`,
-        content: updatedBase64,
-        sha: fileData.sha
-      })
-    });
-    if(!response.ok) throw new Error("Failed to write updates to studio ledger schema file.");
-  }
-
-  function showStatus(text, type) {
-    const box = document.getElementById('status-msg');
-    box.innerText = text;
-    box.className = type;
-    box.style.display = 'block';
-  }
-</script>
+      const putRes = await fetch(url, {
+        method: "PUT",
+        headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ message: `Automated ledger update for: ${newArtwork.title}`, content: updatedBase64, sha })
+      });
+      if (!putRes.ok) throw new Error("Central registry indexing transaction denied.");
+    }
+  </script>
 </body>
 </html>
