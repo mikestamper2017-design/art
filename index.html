@@ -94,7 +94,7 @@
     <div class="prov-field"><strong>Medium:</strong> Fine Art Selection</div>
     <div class="prov-field"><strong>Substrate:</strong> Premium Material Spec</div>
     <div class="prov-divider"></div>
-    <div class="prov-narrative">
+    <div class="prov-narrative" id="prov-text">
       "This work chronicles the shifting geological or natural textures observed during field research, translated through meticulous structural framing to document the physical environment."
     </div>
   </div>
@@ -123,7 +123,8 @@
         <img id="sculpturePhase2" src="./phase-chisel.jpg">
         <img id="sculpturePhase3" src="./phase-finished.jpg">
         
-        <audio id="artistNarrative" src="./audio-commentary.mp3" preload="auto"></audio>
+        <audio id="audioPainting" src="./audio-commentary.mp3" preload="auto"></audio>
+        <audio id="audioSculpture" src="./audio-commentary.mp3" preload="auto"></audio>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
@@ -143,16 +144,16 @@
     <div class="meta-block">
       <div>
         <h1 class="art-title" id="ui-title">Studio Showcase Collection</h1>
-        <p class="art-collection" id="ui-subtext">Mike Andrew Stamper Creative Pen Name Series</p>
+        <p class="art-collection" id="ui-subtext">Scan an artwork to begin</p>
       </div>
     </div>
 
     <div class="audio-player-ui">
       <div class="audio-details">
-        <span class="audio-title">The Artist's Perspective</span>
-        <span class="audio-subtitle" id="audio-status">Audio Clip Idle</span>
+        <span class="audio-title" id="audio-track-title">The Artist's Perspective</span>
+        <span class="audio-subtitle" id="audio-status">No artwork scanned</span>
       </div>
-      <button id="audio-action-btn" class="audio-control-btn" onclick="toggleAudioPlayback()">Play Track</button>
+      <button id="audio-action-btn" class="audio-control-btn" onclick="toggleAudioPlayback()" disabled style="opacity: 0.5;">Play Track</button>
     </div>
 
     <div id="sculpture-timeline" class="process-timeline">
@@ -171,43 +172,62 @@
   </div>
 
   <script>
-    const audioTrack = document.getElementById('artistNarrative');
+    // Audio elements routing variables
+    const audioPainting = document.getElementById('audioPainting');
+    const audioSculpture = document.getElementById('audioSculpture');
+    let currentActiveAudio = null; // Dynamically updated based on tracking target
+
     const audioActionBtn = document.getElementById('audio-action-btn');
     const audioStatusText = document.getElementById('audio-status');
     const trackingLabel = document.getElementById('tracking-indicator');
     const videoAsset = document.getElementById('canvasVideo');
     
-    let activeTargetMode = 'painting'; 
+    let activeTargetMode = 'none'; 
 
     function unlockAudioSystem() {
       const shield = document.getElementById('audio-gatekeeper');
       shield.style.opacity = '0';
       setTimeout(() => shield.style.display = 'none', 400);
       
-      videoAsset.play().then(() => {
-         videoAsset.pause(); 
-      }).catch(e => console.log("Video bootstrap handled."));
+      // Warm up video container trigger block
+      videoAsset.play().then(() => { videoAsset.pause(); }).catch(e => {});
 
-      audioTrack.play().then(() => {
-        audioTrack.pause();
-        audioTrack.currentTime = 0;
-      }).catch(err => console.log("Audio warm-up bypassed."));
+      // Warm up both audio context streams to comply with mobile privacy locks
+      audioPainting.play().then(() => { audioPainting.pause(); audioPainting.currentTime = 0; }).catch(e => {});
+      audioSculpture.play().then(() => { audioSculpture.pause(); audioSculpture.currentTime = 0; }).catch(e => {});
       
       const sceneEl = document.querySelector('a-scene');
       sceneEl.systems["mindar-image-system"].start();
+      trackingLabel.innerText = "System: Ready to Scan";
+      audioStatusText.innerText = "Ready to scan artwork";
     }
 
     document.addEventListener("DOMContentLoaded", () => {
       const paintingTarget = document.getElementById('painting-anchor');
       const sculptureTarget = document.getElementById('sculpture-anchor');
 
+      // PAINTING TRACKING DISCOVERY MATRIX
       paintingTarget.addEventListener("targetFound", () => {
+        // Stop any conflicting audio playback streams immediately
+        stopAllAudioPlayback();
+
         trackingLabel.innerText = "Target: Painting Active";
         activeTargetMode = 'painting';
+        currentActiveAudio = audioPainting; // Route control button to the painting commentary file
+        
+        // Update Metadata Fields
         document.getElementById('ui-title').innerText = "Serenity in the Muskokas";
         document.getElementById('ui-subtext').innerText = "Original Watercolor Canvas Layer";
+        document.getElementById('prov-text').innerText = "\"Serenity in the Muskokas captures the early morning fog breaking across the open lake channels, painted on-site using standard wet-on-wet watercolor washing techniques.\"";
         document.getElementById('sculpture-timeline').style.display = 'none';
         
+        // UI Player Unlock
+        audioActionBtn.removeAttribute('disabled');
+        audioActionBtn.style.opacity = "1";
+        audioActionBtn.innerText = "Play Commentary";
+        audioStatusText.innerText = "Commentary track available";
+
+        // Start muted background loop video overlay
         videoAsset.muted = true;
         videoAsset.play();
       });
@@ -215,31 +235,65 @@
       paintingTarget.addEventListener("targetLost", () => {
         trackingLabel.innerText = "System: Scanning Scene";
         videoAsset.pause();
+        stopAllAudioPlayback();
+        resetPlayerToIdle();
       });
 
+      // SCULPTURE TRACKING DISCOVERY MATRIX
       sculptureTarget.addEventListener("targetFound", () => {
+        stopAllAudioPlayback();
+
         trackingLabel.innerText = "Target: Sculpture Active";
         activeTargetMode = 'sculpture';
+        currentActiveAudio = audioSculpture; // Route control button to the sculpture commentary file
+        
+        // Update Metadata Fields
         document.getElementById('ui-title').innerText = "Abstract Geometries in Soapstone";
         document.getElementById('ui-subtext').innerText = "Hand-Carved Canadian Soapstone Form";
+        document.getElementById('prov-text').innerText = "\"Hand-carved out of a raw solid block of dark Canadian soapstone, exploring the clean intersection of minimalist curved edge-lines and empty volumetric negative space.\"";
         document.getElementById('sculpture-timeline').style.display = 'flex';
+        
+        // UI Player Unlock
+        audioActionBtn.removeAttribute('disabled');
+        audioActionBtn.style.opacity = "1";
+        audioActionBtn.innerText = "Play Commentary";
+        audioStatusText.innerText = "Commentary track available";
       });
+
       sculptureTarget.addEventListener("targetLost", () => {
         trackingLabel.innerText = "System: Scanning Scene";
+        stopAllAudioPlayback();
+        resetPlayerToIdle();
       });
     });
 
-    // Integrated Audio Pipeline Controller
+    // Centralized Playback Toggle Engine Hook
     function toggleAudioPlayback() {
-      if (audioTrack.paused) {
-        audioTrack.play();
+      if (!currentActiveAudio) return;
+
+      if (currentActiveAudio.paused) {
+        currentActiveAudio.play();
         audioActionBtn.innerText = "Pause";
-        audioStatusText.innerText = "Streaming commentary...";
+        audioStatusText.innerText = "Playing narrative track...";
       } else {
-        audioTrack.pause();
-        audioActionBtn.innerText = "Play Track";
+        currentActiveAudio.pause();
+        audioActionBtn.innerText = "Play Commentary";
         audioStatusText.innerText = "Audio paused";
       }
+    }
+
+    // Explicit Safety Kill Switch Functions
+    function stopAllAudioPlayback() {
+      audioPainting.pause();
+      audioSculpture.pause();
+      audioActionBtn.innerText = "Play Commentary";
+    }
+
+    function resetPlayerToIdle() {
+      audioStatusText.innerText = "Artwork lost. Scan to resume.";
+      audioActionBtn.setAttribute('disabled', 'true');
+      audioActionBtn.style.opacity = "0.5";
+      currentActiveAudio = null;
     }
 
     function setSculpturePhase(phaseIndex) {
