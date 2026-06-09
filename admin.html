@@ -12,10 +12,9 @@
     label { display: block; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #555; margin-bottom: 6px; }
     input[type="text"], textarea, input[type="password"] { width: 100%; padding: 12px; border: 1px solid #d2d2d7; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
     textarea { height: 100px; resize: vertical; }
-    .file-input-wrapper { background: #f9f9f9; border: 2px dashed #d2d2d7; border-radius: 6px; padding: 20px; text-align: center; cursor: pointer; }
     .btn { background: #000; color: #fff; border: none; width: 100%; padding: 14px; font-size: 15px; font-weight: 500; border-radius: 6px; cursor: pointer; margin-top: 10px; transition: background 0.2s; }
     .btn:hover { background: #222; }
-    #status-msg { margin-top: 20px; padding: 12px; border-radius: 6px; display: none; font-size: 14px; text-align: center; }
+    #status-msg { margin-top: 20px; padding: 12px; border-radius: 6px; display: none; font-size: 14px; text-align: center; line-height: 1.4; }
     .success { background: #e2f6ea; color: #137e3d; }
     .error { background: #fde8e8; color: #c81e1e; }
   </style>
@@ -28,24 +27,24 @@
   
   <div class="form-group">
     <label>GitHub Access Token</label>
-    <input type="password" id="gh-token" placeholder="paste your classic secret token here">
+    <input type="password" id="gh-token" placeholder="Paste your classic secret token here">
   </div>
   
   <hr style="border:0; border-top:1px solid #eee; margin:24px 0;">
 
   <div class="form-group">
     <label>Artwork Title</label>
-    <input type="text" id="art-title" placeholder="e.g., Serenity in the Muskokas">
+    <input type="text" id="art-title" placeholder="e.g., Abstract Geometries">
   </div>
 
   <div class="form-group">
     <label>Medium / Subtext</label>
-    <input type="text" id="art-subtext" placeholder="e.g., Original Watercolor Canvas Layer">
+    <input type="text" id="art-subtext" placeholder="e.g., Hand-Carved Canadian Soapstone">
   </div>
 
   <div class="form-group">
     <label>Provenance Narrative Documentation</label>
-    <textarea id="art-provenance" placeholder="Describe the physical work, background story, and creation process details..."></textarea>
+    <textarea id="art-provenance" placeholder="Describe the background story and creation process details..."></textarea>
   </div>
 
   <div class="form-group">
@@ -64,50 +63,52 @@
 </div>
 
 <script>
-  // Configuration Settings - Update these to match your exact portfolio specifics!
-  const GITHUB_USER = "YOUR_GITHUB_USERNAME"; 
-  const GITHUB_REPO = "YOUR_REPOSITORY_NAME";
+  // Tailored User Parameters
+  const GITHUB_USER = "mikestamper2017"; 
+  const GITHUB_REPO = "art"; // Points directly to the destination repository name
 
   async function processStudioUpload() {
-    const token = document.getElementById('gh-token').value;
-    const title = document.getElementById('art-title').value;
-    const subtext = document.getElementById('art-subtext').value;
-    const provenance = document.getElementById('art-provenance').value;
+    const token = document.getElementById('gh-token').value.trim();
+    const title = document.getElementById('art-title').value.trim();
+    const subtext = document.getElementById('art-subtext').value.trim();
+    const provenance = document.getElementById('art-provenance').value.trim();
     const targetFile = document.getElementById('file-target').files[0];
     const videoFile = document.getElementById('file-video').files[0];
-    
-    const statusBox = document.getElementById('status-msg');
     
     if(!token || !title || !targetFile || !videoFile) {
       showStatus("Please complete all required fields and insert your security token.", "error");
       return;
     }
 
-    showStatus("Initializing files... Preparing repository matrix transmission.", "success");
+    showStatus("Initializing asset compilation payload...", "success");
 
     try {
-      // 1. Standardize clean filenames based on target title slug strings
       const assetSlug = title.toLowerCase().replace(/[^a-z0-9]/g, "-");
       const videoName = `video-${assetSlug}.mp4`;
       const imageName = `target-${assetSlug}.jpg`;
 
-      // 2. Read and convert local files to Base64 data arrays for GitHub transmission
       const targetBase64 = await convertFileToBase64(targetFile);
       const videoBase64 = await convertFileToBase64(videoFile);
 
-      // 3. Upload the Video File directly to your root repository via API
-      showStatus(`Uploading video file: ${videoName}...`, "success");
-      await uploadToGitHub(token, videoName, videoBase64, `Upload video layer for ${title}`);
+      // 1. Send Video file to GitHub
+      showStatus(`Processing Stream: Uploading ${videoName}...`, "success");
+      await uploadToGitHub(token, videoName, videoBase64, `Upload video overlay for ${title}`);
 
-      // 4. Upload the Target Image File directly to your root repository via API
-      showStatus(`Uploading target tracking asset: ${imageName}...`, "success");
-      await uploadToGitHub(token, imageName, targetBase64, `Upload target tracking image for ${title}`);
+      // 2. Send Image file to GitHub
+      showStatus(`Processing Stream: Uploading ${imageName}...`, "success");
+      await uploadToGitHub(token, imageName, targetBase64, `Upload tracking image for ${title}`);
 
-      // 5. Fetch, modify, and rewrite the main app tracking architecture automatically!
-      showStatus("Updating immersive engine parameters inside index.html...", "success");
-      await updateGalleryCodebase(token, title, subtext, provenance, imageName, videoName);
+      // 3. Download, modify, and push updated artworks.json ledger
+      showStatus("Synchronizing studio ledger database (artworks.json)...", "success");
+      await updateLedgerDatabase(token, {
+        title: title,
+        subtext: subtext,
+        provenance: provenance,
+        image: imageName,
+        video: videoName
+      });
 
-      showStatus("Successfully Published! Wait 60 seconds for GitHub to rebuild, then test your live target.", "success");
+      showStatus("Gallery entry published completely! Give GitHub Pages 60 seconds to compile, then refresh your app.", "success");
     } catch (err) {
       showStatus(`Transmission Fault: ${err.message}`, "error");
     }
@@ -124,15 +125,10 @@
 
   async function uploadToGitHub(token, filename, base64Content, commitMessage) {
     const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${filename}`;
-    
-    // Check if the file already exists to obtain its structural update sha hash signature
     let sha = null;
     try {
       const res = await fetch(url, { headers: { "Authorization": `token ${token}` } });
-      if (res.ok) {
-        const data = await res.json();
-        sha = data.sha;
-      }
+      if (res.ok) { const data = await res.json(); sha = data.sha; }
     } catch(e) {}
 
     const body = { message: commitMessage, content: base64Content };
@@ -143,31 +139,33 @@
       headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(body)
     });
-
-    if(!response.ok) {
-      const errData = await response.json();
-      throw new Error(`GitHub Upload Failure: ${errData.message}`);
-    }
+    if(!response.ok) throw new Error("Asset transfer rejected by GitHub file system parameters.");
   }
 
-  async function updateGalleryCodebase(token, title, subtext, provenance, imageName, videoName) {
-    const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/index.html`;
+  async function updateLedgerDatabase(token, newArtworkObj) {
+    const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/artworks.json`;
     
     const res = await fetch(url, { headers: { "Authorization": `token ${token}` } });
-    if(!res.ok) throw new Error("Could not find index.html source code in repository.");
+    if(!res.ok) throw new Error("Ledger database file (artworks.json) missing from repository root.");
     
     const fileData = await res.json();
-    let currentCode = atob(fileData.content);
-
-    // DYNAMIC INJECTION CODE HOOK: We look for specialized markers in your template files to slot arrays
-    showStatus("Compiling template arrays inside application code mapping...", "success");
+    const currentLedger = JSON.parse(atob(fileData.content));
     
-    // For this completely browser-contained automation pipeline, we can configure our engine to append
-    // file listings dynamically inside a simple structural JSON or inline arrays. 
-    // To finalize the automation loop completely, we will structure index.html next to handle this script.
+    // Append the newly created artwork object array to the ledger
+    currentLedger.push(newArtworkObj);
     
-    // Let's rewrite the layout code to push updates directly.
-    // For a cleaner automation loop, we will configure index.html to read a simple auto-managed config!
+    const updatedBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(currentLedger, null, 2))));
+    
+    const response = await fetch(url, {
+      method: "PUT",
+      headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: `Automated inventory addition: ${newArtworkObj.title}`,
+        content: updatedBase64,
+        sha: fileData.sha
+      })
+    });
+    if(!response.ok) throw new Error("Failed to write updates to studio ledger schema file.");
   }
 
   function showStatus(text, type) {
@@ -177,6 +175,5 @@
     box.style.display = 'block';
   }
 </script>
-
 </body>
 </html>
