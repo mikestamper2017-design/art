@@ -54,7 +54,7 @@
 
     <div id="tracking-indicator">System: Offline</div>
 
-    <a-scene embedded color-space="sRGB" renderer="alpha: true, antialias: true" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+    <a-scene mindar-image="autoStart: false; filterMinCF:0.001; filterBeta: 1000;" embedded color-space="sRGB" renderer="alpha: true, antialias: true" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       <a-assets id="dynamic-assets"></a-assets>
     </a-scene>
@@ -77,14 +77,16 @@
     let studioInventory = [];
     const trackingLabel = document.getElementById('tracking-indicator');
 
-    // Fetch the automated database configuration directly upon interface mount
+    // Load data from the ledger immediately upon page read
     document.addEventListener("DOMContentLoaded", async () => {
       try {
         const response = await fetch('./artworks.json');
+        if (!response.ok) throw new Error("Missing json architecture ledger record");
         studioInventory = await response.json();
         buildARTrackingMatrix(studioInventory);
       } catch (err) {
-        trackingLabel.innerText = "Database Load Error";
+        trackingLabel.innerText = "Ledger Setup Required";
+        console.error(err);
       }
     });
 
@@ -93,7 +95,7 @@
       const sceneElement = document.querySelector('a-scene');
 
       inventory.forEach((item, index) => {
-        // 1. Generate local browser video stream element hooks
+        // 1. Set up individual browser playback engines
         const videoElement = document.createElement('video');
         videoElement.setAttribute('id', `vid-${index}`);
         videoElement.setAttribute('src', `./${item.video}`);
@@ -104,19 +106,18 @@
         videoElement.setAttribute('webkit-playsinline', '');
         assetsContainer.appendChild(videoElement);
 
-        // 2. Generate MindAR Live Anchor Object
+        // 2. Set up image targets mapped directly to uploaded images
         const anchorEntity = document.createElement('a-entity');
-        // Pointing directly to the raw target image file paths hosted right inside your directory
         anchorEntity.setAttribute('mindar-image-target', `imageTargetSrc: ./${item.image}`);
 
         const videoPlane = document.createElement('a-video');
         videoPlane.setAttribute('src', `#vid-${index}`);
         videoPlane.setAttribute('position', '0 0 0');
         videoPlane.setAttribute('width', '1');
-        videoPlane.setAttribute('height', '0.666'); // Adjust height proportions dynamically as needed
+        videoPlane.setAttribute('height', '0.666'); 
         anchorEntity.appendChild(videoPlane);
 
-        // 3. Attach tracking state event triggers dynamically
+        // 3. Monitor for sight lines matching target artwork profiles
         anchorEntity.addEventListener("targetFound", () => {
           trackingLabel.innerText = `Target Detected`;
           document.getElementById('ui-title').innerText = item.title;
@@ -139,16 +140,22 @@
       shield.style.opacity = '0';
       setTimeout(() => shield.style.display = 'none', 400);
 
-      // Trigger all built video element streams instantly inside touch event block to bypass mobile privacy blocks
+      // Warm up the video loop layers instantly on user interaction
       studioInventory.forEach((item, index) => {
         const vid = document.getElementById(`vid-${index}`);
         if(vid) { vid.play().then(() => { vid.pause(); }).catch(e => {}); }
       });
 
-      // Launch MindAR engine mapping layer tracking execution pipeline
+      // Fire up the hardware engine lens sequence directly inside the tap event loop
       const sceneEl = document.querySelector('a-scene');
-      sceneEl.setAttribute('mindar-image', 'autoStart: true; filterMinCF:0.001; filterBeta: 1000;');
-      trackingLabel.innerText = "System: Lens Active";
+      try {
+        sceneEl.systems["mindar-image-system"].start();
+        trackingLabel.innerText = "System: Lens Active";
+      } catch (e) {
+        // Fallback for script component timing updates
+        sceneEl.setAttribute('mindar-image', 'autoStart: true;');
+        trackingLabel.innerText = "System: Lens Initializing";
+      }
     }
 
     function switchDockTab(selectedTab) {
