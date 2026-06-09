@@ -6,12 +6,13 @@
   <title>Studio Registry - Automated AR Compiler Dashboard</title>
   
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-compiler.prod.js"></script>
   
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f5f5f7; margin: 0; padding: 40px 20px; color: #111; }
     .container { max-width: 600px; background: #fff; margin: 0 auto; padding: 32px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
     h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.5px; margin-top: 0; margin-bottom: 6px; }
-    p.subtitle { color: #666; font-size: 14px; margin-0 0 24px 0; line-height: 1.4; }
+    p.subtitle { color: #666; font-size: 14px; margin: 0 0 24px 0; line-height: 1.4; }
     .form-group { margin-bottom: 20px; }
     label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; color: #444; }
     input[type='text'], textarea, input[type='password'] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
@@ -111,35 +112,56 @@
 
       try {
         // Step 1: Initialize local in-browser compilation mechanics
-        showStatus("Phase 1: Local compilation worker threading active. Building feature maps...", "processing");
-        const trackingBuffer = await compileImageToMindBuffer(targetFile);
+        showStatus("Phase 1: Local compiler active. Analyzing and mapping canvas image contours...", "processing");
+        const newTargetData = await compileImageToTargetData(targetFile);
 
-        // Step 2: Convert assets to transmission formats
-        showStatus("Phase 2: Compressing binary payload allocations...", "processing");
+        // Step 2: Download existing targets.mind array map to prevent wiping old data rows
+        showStatus("Phase 2: Syncing with existing global tracking files...", "processing");
+        const currentMindBuffer = await fetchExistingMindBuffer(token);
+        
+        let finalMindBuffer;
+        const compiler = new window.MINDAR.IMAGE.Compiler();
+
+        if (currentMindBuffer) {
+          showStatus("Phase 3: Merging new artwork tracking indices into master archive array...", "processing");
+          // Import previous targets, append the fresh image calculation data, and bundle
+          const imageList = compiler.importData(currentMindBuffer);
+          imageList.push(newTargetData[0]); 
+          finalMindBuffer = compiler.exportData(imageList);
+        } else {
+          showStatus("Phase 3: Creating pristine master tracking database file...", "processing");
+          finalMindBuffer = compiler.exportData(newTargetData);
+        }
+
+        // Step 4: Convert assets to clean base64 data streams
+        showStatus("Phase 4: Structuring binary asset upload payloads...", "processing");
         const videoBase64 = await convertFileToBase64(videoFile);
         const imageBase64 = await convertFileToBase64(targetFile);
-        const mindBase64 = btoa(String.fromCharCode(...new Uint8Array(trackingBuffer)));
+        const mindBase64 = btoa(String.fromCharCode(...new Uint8Array(finalMindBuffer)));
 
-        // Step 3: Stream physical video layer up
-        showStatus(`Phase 3: Uploading motion layer: ${videoName}...`, "processing");
+        // Step 5: Upload media layers
+        showStatus(`Phase 5: Uploading motion layer overlay: ${videoName}...`, "processing");
         await pushFileToGitHub(token, videoName, videoBase64, `Upload video layer for ${title}`);
 
-        // Step 4: Stream backup target image layer up
-        showStatus(`Phase 4: Storing reference tracking snapshot: ${imageName}...`, "processing");
+        showStatus(`Phase 6: Uploading reference image canvas snapshot: ${imageName}...`, "processing");
         await pushFileToGitHub(token, imageName, imageBase64, `Upload tracking reference for ${title}`);
 
-        // Step 5: Overwrite master compiled binary file map
-        showStatus("Phase 5: Syncing global tracking data matrices (.mind file)...", "processing");
-        await pushFileToGitHub(token, "targets.mind", mindBase64, `Update compiled tracking profile index mappings for ${title}`);
+        // Step 6: Overwrite global targets.mind compilation mapping index file
+        showStatus("Phase 7: Saving updated tracking vector ledger maps (.mind)...", "processing");
+        await pushFileToGitHub(token, "targets.mind", mindBase64, `Append compiled tracking profile index mappings for ${title}`);
 
-        // Step 6: Update structural ledger array records
-        showStatus("Phase 6: Logging records into central registry ledger matrix...", "processing");
+        // Step 7: Update textual metadata JSON registry ledger record data
+        showStatus("Phase 8: Recording metadata fields to central gallery database...", "processing");
         await appendRecordToLedger(token, { title, subtext, provenance, image: imageName, video: videoName });
 
-        showStatus("Gallery profile successfully compiled and published! Give GitHub 60 seconds to refresh, then test your camera viewer.", "success");
+        showStatus("Gallery profile successfully compiled and published! Give GitHub 60 seconds to deploy, then clear your Safari cache and test.", "success");
         document.getElementById('art-title').value = '';
         document.getElementById('art-subtext').value = '';
         document.getElementById('art-provenance').value = '';
+        document.getElementById('file-target').value = '';
+        document.getElementById('file-video').value = '';
+        document.getElementById('label-image').innerText = "Select Raw Target Image";
+        document.getElementById('label-video').innerText = "Select Motion Asset";
       } catch (err) {
         showStatus(`Compilation Fault: ${err.message}`, "error");
       } finally {
@@ -147,24 +169,41 @@
       }
     }
 
-    // MindAR engine local runtime compilation adapter logic
-    function compileImageToMindBuffer(file) {
+    // Leverages standalone compiler plugin window space scripts
+    function compileImageToTargetData(file) {
       return new Promise((resolve, reject) => {
         const img = new Image();
         img.src = URL.createObjectURL(file);
         img.onload = async () => {
           try {
+            // Instantiate correct constructor pulled down from compiler dependency file
             const compiler = new window.MINDAR.IMAGE.Compiler();
-            // Process canvas dimensional scales dynamically to structure control maps
             const trackingData = await compiler.compileImageTargets([img], (progress) => {
-              showStatus(`Phase 1: Feature processing calculation: ${Math.round(progress)}%`, "processing");
+              showStatus(`Phase 1: Surface vector compilation: ${Math.round(progress)}%`, "processing");
             });
-            const buffer = compiler.exportData(trackingData);
-            resolve(buffer);
+            resolve(trackingData);
           } catch (e) { reject(e); }
         };
-        img.onerror = () => reject(new Error("Failed to map spatial image contours. Use standard RGB profiles."));
+        img.onerror = () => reject(new Error("Failed to map graphic image contours. Image file might be corrupted."));
       });
+    }
+
+    async function fetchExistingMindBuffer(token) {
+      const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/targets.mind`;
+      try {
+        const res = await fetch(url, { headers: { "Authorization": `token ${token}` } });
+        if (res.ok) {
+          const data = await res.json();
+          const binaryString = atob(data.content);
+          const len = binaryString.length;
+          const bytes = new Uint8Array(len);
+          for (let i = 0; i < len; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          return bytes.buffer;
+        }
+      } catch (e) {}
+      return null;
     }
 
     function convertFileToBase64(file) {
@@ -196,7 +235,7 @@
         headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify(body)
       });
-      if (!res.ok) throw new Error(`Repository architecture upload failed for asset entity: ${filename}`);
+      if (!res.ok) throw new Error(`Repository upload block encountered for asset profile: ${filename}`);
     }
 
     async function appendRecordToLedger(token, newArtwork) {
@@ -217,9 +256,9 @@
       const putRes = await fetch(url, {
         method: "PUT",
         headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ message: `Automated ledger update for: ${newArtwork.title}`, content: updatedBase64, sha })
+        body: JSON.stringify({ message: `Automated ledger indexing for: ${newArtwork.title}`, content: updatedBase64, sha })
       });
-      if (!putRes.ok) throw new Error("Central registry indexing transaction denied.");
+      if (!putRes.ok) throw new Error("Central JSON database transactions denied.");
     }
   </script>
 </body>
