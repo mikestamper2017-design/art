@@ -14,6 +14,12 @@
     #ar-viewport { width: 100vw; height: 70vh; position: relative; background-color: transparent !important; }
     a-scene canvas { background-color: transparent !important; z-index: 1; }
     
+    /* Strict layered transparency logic to clear iPad Safari black box blocks */
+    #ar-viewport, a-scene, canvas, video, .mindar-ui-overlay, .mindar-ui-loading {
+      background-color: transparent !important;
+      background: transparent !important;
+    }
+    
     #audio-gatekeeper { position: absolute; top: 0; left: 0; width: 100vw; height: 70vh; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff; text-align: center; padding: 20px; box-sizing: border-box; cursor: pointer; }
     #audio-gatekeeper h2 { font-size: 18px; font-weight: 400; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
     #audio-gatekeeper p { font-size: 13px; color: #aaa; margin: 0 0 20px 0; max-width: 280px; line-height: 1.5; }
@@ -36,7 +42,7 @@
     .prov-narrative { margin-top: 24px; font-style: italic; color: #444444; line-height: 1.6; font-size: 14px; background: #f5f5f7; padding: 16px; border-radius: 8px; border-left: 3px solid #111; }
   </style>
 </head>
-<body>
+<body style="background-color: transparent !important;">
 
   <div id="provenance-panel">
     <div class="prov-header">Registry Documentation</div>
@@ -54,7 +60,7 @@
 
     <div id="tracking-indicator">System: Offline</div>
 
-    <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; filterMinCF:0.001; filterBeta: 1000;" embedded color-space="sRGB" renderer="alpha: true, antialias: true" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; filterMinCF:0.001; filterBeta: 1000;" embedded renderer="alpha: true; colorManagement: true; antialias: true;" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
       <a-assets id="dynamic-assets"></a-assets>
     </a-scene>
@@ -77,7 +83,6 @@
     let studioInventory = [];
     const trackingLabel = document.getElementById('tracking-indicator');
 
-    // Load data from the ledger immediately upon page read
     document.addEventListener("DOMContentLoaded", async () => {
       try {
         const response = await fetch('./artworks.json');
@@ -95,7 +100,6 @@
       const sceneElement = document.querySelector('a-scene');
 
       inventory.forEach((item, index) => {
-        // 1. Set up individual browser playback engines
         const videoElement = document.createElement('video');
         videoElement.setAttribute('id', `vid-${index}`);
         videoElement.setAttribute('src', `./${item.video}`);
@@ -106,7 +110,6 @@
         videoElement.setAttribute('webkit-playsinline', '');
         assetsContainer.appendChild(videoElement);
 
-        // 2. Set up image targets tied explicitly to compiled file index order positions
         const anchorEntity = document.createElement('a-entity');
         anchorEntity.setAttribute('mindar-image-target', `targetIndex: ${index}`);
 
@@ -117,7 +120,6 @@
         videoPlane.setAttribute('height', '0.666'); 
         anchorEntity.appendChild(videoPlane);
 
-        // 3. Monitor for sight lines matching target artwork profiles
         anchorEntity.addEventListener("targetFound", () => {
           trackingLabel.innerText = `Target Detected`;
           document.getElementById('ui-title').innerText = item.title;
@@ -140,19 +142,16 @@
       shield.style.opacity = '0';
       setTimeout(() => shield.style.display = 'none', 400);
 
-      // Warm up the video loop layers instantly on user interaction
       studioInventory.forEach((item, index) => {
         const vid = document.getElementById(`vid-${index}`);
         if(vid) { vid.play().then(() => { vid.pause(); }).catch(e => {}); }
       });
 
-      // Fire up the hardware engine lens sequence directly inside the tap event loop
       const sceneEl = document.querySelector('a-scene');
       try {
         sceneEl.systems["mindar-image-system"].start();
         trackingLabel.innerText = "System: Lens Active";
       } catch (e) {
-        // Fallback for script component timing updates
         sceneEl.setAttribute('mindar-image', 'autoStart: true;');
         trackingLabel.innerText = "System: Lens Initializing";
       }
