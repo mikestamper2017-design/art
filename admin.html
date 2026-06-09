@@ -91,6 +91,19 @@
       box.style.display = 'block';
     }
 
+    // Resolves the exact constructor path depending on how the browser assigns MindAR's compiler properties
+    function getCompilerInstance() {
+      if (window.MINDAR && window.MINDAR.IMAGE && window.MINDAR.IMAGE.Compiler) {
+        return new window.MINDAR.IMAGE.Compiler();
+      } else if (window.MINDAR && window.MINDAR.Compiler) {
+        return new window.MINDAR.Compiler();
+      } else if (window.MindAR && window.MindAR.Compiler) {
+        return new window.MindAR.Compiler();
+      } else {
+        throw new Error("Tracking component engine architecture script allocation failed to load.");
+      }
+    }
+
     async function processStudioUpload() {
       const token = document.getElementById('gh-token').value.trim();
       const title = document.getElementById('art-title').value.trim();
@@ -111,47 +124,47 @@
       const imageName = `target-${assetSlug}.jpg`;
 
       try {
-        // Step 1: Initialize local in-browser compilation mechanics
-        showStatus("Phase 1: Local compiler active. Analyzing and mapping canvas image contours...", "processing");
+        // Step 1: Initialize local compiler and test constructor properties immediately
+        showStatus("Phase 1: Instantiating tracking calculation processors...", "processing");
+        const testCompiler = getCompilerInstance();
+
+        showStatus("Phase 2: Local compiler active. Analyzing and mapping canvas image contours...", "processing");
         const newTargetData = await compileImageToTargetData(targetFile);
 
-        // Step 2: Download existing targets.mind array map to prevent wiping old data rows
-        showStatus("Phase 2: Syncing with existing global tracking files...", "processing");
+        // Step 3: Check for existing tracking maps
+        showStatus("Phase 3: Syncing with existing global tracking files...", "processing");
         const currentMindBuffer = await fetchExistingMindBuffer(token);
         
         let finalMindBuffer;
-        const compiler = new window.MINDAR.IMAGE.Compiler();
+        const compiler = getCompilerInstance();
 
         if (currentMindBuffer) {
-          showStatus("Phase 3: Merging new artwork tracking indices into master archive array...", "processing");
-          // Import previous targets, append the fresh image calculation data, and bundle
+          showStatus("Phase 4: Merging new artwork tracking indices into master archive array...", "processing");
           const imageList = compiler.importData(currentMindBuffer);
           imageList.push(newTargetData[0]); 
           finalMindBuffer = compiler.exportData(imageList);
         } else {
-          showStatus("Phase 3: Creating pristine master tracking database file...", "processing");
+          showStatus("Phase 4: Creating pristine master tracking database file...", "processing");
           finalMindBuffer = compiler.exportData(newTargetData);
         }
 
-        // Step 4: Convert assets to clean base64 data streams
-        showStatus("Phase 4: Structuring binary asset upload payloads...", "processing");
+        // Step 4: Convert to upload delivery streams
+        showStatus("Phase 5: Structuring binary asset upload payloads...", "processing");
         const videoBase64 = await convertFileToBase64(videoFile);
         const imageBase64 = await convertFileToBase64(targetFile);
         const mindBase64 = btoa(String.fromCharCode(...new Uint8Array(finalMindBuffer)));
 
-        // Step 5: Upload media layers
-        showStatus(`Phase 5: Uploading motion layer overlay: ${videoName}...`, "processing");
+        // Step 5: Execute GitHub API uploads
+        showStatus(`Phase 6: Uploading motion layer overlay: ${videoName}...`, "processing");
         await pushFileToGitHub(token, videoName, videoBase64, `Upload video layer for ${title}`);
 
-        showStatus(`Phase 6: Uploading reference image canvas snapshot: ${imageName}...`, "processing");
+        showStatus(`Phase 7: Uploading reference image canvas snapshot: ${imageName}...`, "processing");
         await pushFileToGitHub(token, imageName, imageBase64, `Upload tracking reference for ${title}`);
 
-        // Step 6: Overwrite global targets.mind compilation mapping index file
-        showStatus("Phase 7: Saving updated tracking vector ledger maps (.mind)...", "processing");
+        showStatus("Phase 8: Saving updated tracking vector ledger maps (.mind)...", "processing");
         await pushFileToGitHub(token, "targets.mind", mindBase64, `Append compiled tracking profile index mappings for ${title}`);
 
-        // Step 7: Update textual metadata JSON registry ledger record data
-        showStatus("Phase 8: Recording metadata fields to central gallery database...", "processing");
+        showStatus("Phase 9: Recording metadata fields to central gallery database...", "processing");
         await appendRecordToLedger(token, { title, subtext, provenance, image: imageName, video: videoName });
 
         showStatus("Gallery profile successfully compiled and published! Give GitHub 60 seconds to deploy, then clear your Safari cache and test.", "success");
@@ -169,17 +182,15 @@
       }
     }
 
-    // Leverages standalone compiler plugin window space scripts
     function compileImageToTargetData(file) {
       return new Promise((resolve, reject) => {
         const img = new Image();
         img.src = URL.createObjectURL(file);
         img.onload = async () => {
           try {
-            // Instantiate correct constructor pulled down from compiler dependency file
-            const compiler = new window.MINDAR.IMAGE.Compiler();
+            const compiler = getCompilerInstance();
             const trackingData = await compiler.compileImageTargets([img], (progress) => {
-              showStatus(`Phase 1: Surface vector compilation: ${Math.round(progress)}%`, "processing");
+              showStatus(`Phase 2: Surface vector compilation: ${Math.round(progress)}%`, "processing");
             });
             resolve(trackingData);
           } catch (e) { reject(e); }
