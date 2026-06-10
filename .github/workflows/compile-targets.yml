@@ -20,14 +20,11 @@ jobs:
       - name: Process Target Image Arrays
         run: |
           echo "System: Installing MindAR Compiler Tools..."
-          # Install the explicit standalone compiler utility
           npm install -g mind-ar@1.2.5
           
           echo "System: Scanning studio raw targets..."
-          # Gather all target files into a space-separated string array
-          IMAGES=$(ls target-*.jpg target-*.jpeg 2>/dev/null | tr '\n' ' ' || true)
-          # Clean trailing spaces
-          IMAGES=$(echo "$IMAGES" | xargs)
+          # Gather all target files into a regular unquoted list
+          IMAGES=$(ls target-*.jpg target-*.jpeg 2>/dev/null | tr '\n' ' ')
           
           if [ -z "$IMAGES" ]; then
             echo "Error: No matching raw images found to process."
@@ -35,16 +32,15 @@ jobs:
           fi
           
           echo "Compiling tracking vectors for targets: $IMAGES"
-          # Run the absolute direct path binary execution for the compiler
-          npx mindar-image-compile "$IMAGES" targets.mind
+          # Unquoted argument passing allows the compiler CLI to parse each file individually
+          npx mindar-image-compile $IMAGES targets.mind
 
       - name: Commit Compiled Matrix Back to Main
         run: |
           git config --global user.name "Studio Automation"
           git config --global user.email "studio-bot@github.com"
           
-          # Force add the file to ensure tracking updates register cleanly
-          git add -f targets.mind
+          git add targets.mind
           
           if ! git diff --cached --quiet; then
             git commit -m "Automated ledger indexing for tracking matrices [skip ci]"
