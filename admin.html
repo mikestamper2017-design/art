@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Studio Registry - Direct Upload Dashboard</title>
 
-  <!-- MindAR compiler (no A-Frame needed here, just the core library) -->
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js"></script>
+  <!-- MindAR standalone compiler build — exposes window.MINDAR.IMAGE.Compiler -->
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"></script>
 
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f5f5f7; margin: 0; padding: 40px 20px; color: #111; }
@@ -263,8 +263,14 @@
 
     // ─── MINDAR IN-BROWSER COMPILATION ────────────────────────────────────────
     async function compileMindFile(imageElements, onProgress) {
-      // MindAR exposes a compiler on window after the script loads
-      const compiler = new MINDAR.IMAGE.Compiler();
+      // mindar-image-three.prod.js exposes the compiler — try both known paths
+      const MindARCompiler =
+        (window.MINDAR && window.MINDAR.IMAGE && window.MINDAR.IMAGE.Compiler) ||
+        (window.MindAR && window.MindAR.Compiler);
+      if (!MindARCompiler) {
+        throw new Error("MindAR compiler not available. Try a hard-refresh (hold Shift and tap reload).");
+      }
+      const compiler = new MindARCompiler();
 
       // processImages returns a Promise; it calls onProgress(0–1) as it works
       await compiler.compileImageTargets(imageElements, onProgress);
