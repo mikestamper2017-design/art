@@ -1,0 +1,45 @@
+name: Automated MindAR Compiler
+on:
+  push:
+    paths:
+      - 'target-*.jpg'  # Wakes up automatically when a new dashboard target is uploaded
+
+jobs:
+  build-tracking-matrix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Studio Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-node-version: '18'
+
+      - name: Process Target Image Arrays
+        run: |
+          # Install the standalone open-source compiler engine
+          npm install -g mind-ar@1.2.5
+          
+          echo "System: Scanning studio raw targets..."
+          
+          # Find all target jpg files uploaded by the dashboard
+          IMAGES=$(ls target-*.jpg 2>/dev/null || true)
+          
+          if [ -z "$IMAGES" ]; then
+            echo "No raw images present yet."
+            exit 0
+          fi
+          
+          # Compile the images into the uniform tracking package
+          echo "Compiling tracking vectors for: $IMAGES"
+          npx mindar-image-compile $IMAGES targets.mind
+
+      - name: Commit Compiled Matrix Back to Main
+        run: |
+          git config --global user.name "Studio Automation"
+          git config --global user.email "studio-bot@github.com"
+          git add targets.mind
+          
+          # Only commit if the targets file actually changed
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Automated ledger indexing for tracking matrices" && git push)
