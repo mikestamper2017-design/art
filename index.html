@@ -10,12 +10,32 @@
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
   
   <style>
-    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #000; }
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: transparent !important; }
     
-    /* Viewport configuration */
-    #ar-viewport { width: 100vw; height: 70vh; position: relative; overflow: hidden; }
+    #ar-viewport { width: 100vw; height: 70vh; position: relative; overflow: hidden; background-color: transparent !important; }
     
-    /* White-glove gatekeeper overlay to guarantee video audio/video activation context */
+    /* CRITICAL SAFARI FIX: Force the automatic background video layer to be visible and fill the container */
+    video, .a-canvas {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+      z-index: 1 !important;
+    }
+
+    /* Keep the interactive 3D layer sitting precisely over the webcam feed */
+    a-scene {
+      width: 100% !important;
+      height: 100% !important;
+      position: absolute !important;
+      top: 0;
+      left: 0;
+      z-index: 2 !important;
+    }
+    
+    /* White-glove gatekeeper overlay to guarantee user action context */
     #ios-gatekeeper { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #fff; z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box; }
     .gatekeeper-title { font-size: 24px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 8px; color: #111; }
     .gatekeeper-sub { font-size: 14px; color: #666; margin-bottom: 32px; max-width: 300px; line-height: 1.5; }
@@ -37,11 +57,8 @@
     .prov-divider { border: 0; border-top: 1px solid #e5e5e5; margin: 18px 0; }
     .prov-narrative { margin-top: 24px; font-style: italic; color: #444444; line-height: 1.6; font-size: 14px; background: #f5f5f7; padding: 16px; border-radius: 8px; border-left: 3px solid #111; }
 
-    /* Hide the default mindar loading splash screen elements to preserve the white-glove look */
+    /* Clean white-glove hide rules for default loading frames */
     .mindar-ui-loading, .mindar-ui-compatibility { display: none !important; }
-    
-    /* Ensure A-Frame context fills its designated container wrapper cleanly */
-    a-scene { width: 100% !important; height: 100% !important; display: none; }
   </style>
 </head>
 <body>
@@ -89,30 +106,25 @@
   <script>
     let studioInventory = [];
 
-    // Pre-cache central database asset configuration mappings
     document.addEventListener("DOMContentLoaded", async () => {
       try {
         const response = await fetch('./artworks.json');
-        if (!response.ok) throw new Error("Central ledger database missing.");
+        if (!response.ok) throw new Error("JSON file missing.");
         studioInventory = await response.json();
       } catch (err) {
-        console.error("Initialization fault: ", err);
+        console.error("Ledger fault: ", err);
       }
     });
 
     function activateImmersiveScene() {
-      // Transition CSS overlay view states immediately
       document.getElementById('ios-gatekeeper').style.display = 'none';
       document.getElementById('tracking-indicator').style.display = 'block';
       
       const sceneElement = document.querySelector('a-scene');
-      sceneElement.style.display = 'block';
-
       const assetsContainer = document.getElementById('dynamic-assets');
 
-      // Iteratively build out entity map anchors to track everything in artworks.json
       studioInventory.forEach((item, index) => {
-        // Build video configuration layer element
+        // Build video configuration layers smoothly
         const videoElement = document.createElement('video');
         videoElement.setAttribute('id', `vid-${index}`);
         videoElement.setAttribute('src', `./${item.video}`);
@@ -124,27 +136,26 @@
         videoElement.load();
         assetsContainer.appendChild(videoElement);
 
-        // Bind MindAR A-Frame target anchors based on array positioning markers
+        // Map target anchor references precisely to index ordering inside targets.mind
         const targetAnchor = document.createElement('a-entity');
         targetAnchor.setAttribute('mindar-image-target', `targetIndex: ${index}`);
 
-        // Set up flat canvas video projection plane
+        // Flat projection canvas card scaled for standard art compositions
         const videoPlane = document.createElement('a-video');
         videoPlane.setAttribute('src', `#vid-${index}`);
         videoPlane.setAttribute('position', '0 0 0');
         videoPlane.setAttribute('rotation', '0 0 0');
         videoPlane.setAttribute('width', '1');
-        videoPlane.setAttribute('height', '1.3'); // Matches traditional portrait aspect ratios
+        videoPlane.setAttribute('height', '1.3');
 
         targetAnchor.appendChild(videoPlane);
 
-        // Frame target event triggers
         targetAnchor.addEventListener("targetFound", () => {
           document.getElementById('tracking-indicator').innerText = "Target Detected";
           document.getElementById('ui-title').innerText = item.title;
           document.getElementById('ui-subtext').innerText = item.subtext;
           document.getElementById('prov-content').innerText = item.provenance;
-          videoElement.play().catch(e => console.log("Video track unblocking sequence pending...", e));
+          videoElement.play().catch(e => console.log("Awaiting track override context...", e));
         });
 
         targetAnchor.addEventListener("targetLost", () => {
@@ -155,7 +166,7 @@
         sceneElement.appendChild(targetAnchor);
       });
 
-      // Safely kick off camera stream sequence directly inside user click context window
+      // Safely kick off hardware execution stack within user interaction thread
       sceneElement.systems["mindar-image-system"].start();
     }
 
