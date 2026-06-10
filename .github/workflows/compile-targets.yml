@@ -2,7 +2,8 @@ name: Automated MindAR Compiler
 on:
   push:
     paths:
-      - 'target-*.jpg'  # Wakes up automatically when a new dashboard target is uploaded
+      - 'target-*.jpg'
+      - 'target-*.jpeg'
 
 jobs:
   build-tracking-matrix:
