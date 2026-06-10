@@ -20,32 +20,35 @@ jobs:
       - name: Process Target Image Arrays
         run: |
           echo "System: Installing MindAR Compiler Tools..."
-          # Install the official standalone image compiler CLI tool
+          # Install the explicit standalone compiler utility
           npm install -g mind-ar@1.2.5
           
           echo "System: Scanning studio raw targets..."
-          # Find all matching target images uploaded via dashboard
-          IMAGES=$(ls target-*.jpg target-*.jpeg 2>/dev/null || true)
+          # Gather all target files into a space-separated string array
+          IMAGES=$(ls target-*.jpg target-*.jpeg 2>/dev/null | tr '\n' ' ' || true)
+          # Clean trailing spaces
+          IMAGES=$(echo "$IMAGES" | xargs)
           
           if [ -z "$IMAGES" ]; then
-            echo "Error: No matching raw images present."
+            echo "Error: No matching raw images found to process."
             exit 1
           fi
           
-          echo "Compiling tracking vectors for: $IMAGES"
-          # Compile images straight into the main targets.mind tracking file
-          npx mindar-image-compile $IMAGES targets.mind
+          echo "Compiling tracking vectors for targets: $IMAGES"
+          # Run the absolute direct path binary execution for the compiler
+          npx mindar-image-compile "$IMAGES" targets.mind
 
       - name: Commit Compiled Matrix Back to Main
         run: |
           git config --global user.name "Studio Automation"
           git config --global user.email "studio-bot@github.com"
-          git add targets.mind
           
-          # Safely check if files changed before committing to prevent empty loops
+          # Force add the file to ensure tracking updates register cleanly
+          git add -f targets.mind
+          
           if ! git diff --cached --quiet; then
             git commit -m "Automated ledger indexing for tracking matrices [skip ci]"
-            git push
+            git push origin main
           else
             echo "No matrix updates required."
           fi
