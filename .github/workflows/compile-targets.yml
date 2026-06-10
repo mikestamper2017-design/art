@@ -21,24 +21,29 @@ jobs:
           echo "System: Installing MindAR Compiler Tools..."
           npm install -g mind-ar@1.2.5
           
-          echo "System: Scanning studio raw targets..."
-          # Broad scan to make sure it picks up hyphenated files like target-two-pines-lookout.jpg
-          IMAGES=$(ls target-* 2>/dev/null | tr '\n' ' ')
+          echo "System: Detecting all target images..."
+          # Find all target files matching the pattern explicitly
+          FILES=$(ls target-* 2>/dev/null || true)
           
-          if [ -z "$IMAGES" ]; then
-            echo "Error: No matching raw images found to process."
+          if [ -z "$FILES" ]; then
+            echo "Error: No matching raw images present."
             exit 1
           fi
           
-          echo "Compiling tracking vectors for targets: $IMAGES"
-          npx mindar-image-compile $IMAGES targets.mind
+          # Convert newline list to space separated string cleanly
+          IMAGES_LIST=$(echo "$FILES" | tr '\n' ' ')
+          echo "Compiling tracking vectors for: $IMAGES_LIST"
+          
+          # Pass the clean string directly into the compiler tool without quotes
+          npx mindar-image-compile $IMAGES_LIST targets.mind
 
       - name: Commit Compiled Matrix Back to Main
         run: |
           git config --global user.name "Studio Automation"
           git config --global user.email "studio-bot@github.com"
           
-          git add targets.mind
+          # Force track the targets.mind compiled asset binary
+          git add -f targets.mind
           
           if ! git diff --cached --quiet; then
             git commit -m "Automated ledger indexing for tracking matrices [skip ci]"
