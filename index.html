@@ -6,19 +6,22 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Mike Stamper - Immersive Fine Art Archive</title>
   
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js"></script>
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
   
   <style>
     body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #000; }
-    #ar-container { width: 100vw; height: 70vh; position: relative; overflow: hidden; background: #111; }
     
-    /* White-glove entrance gate to satisfy iOS video/webcam playback standards */
+    /* Viewport configuration */
+    #ar-viewport { width: 100vw; height: 70vh; position: relative; overflow: hidden; }
+    
+    /* White-glove gatekeeper overlay to guarantee video audio/video activation context */
     #ios-gatekeeper { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #fff; z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box; }
     .gatekeeper-title { font-size: 24px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 8px; color: #111; }
     .gatekeeper-sub { font-size: 14px; color: #666; margin-bottom: 32px; max-width: 300px; line-height: 1.5; }
     .gatekeeper-btn { background: #000; color: #fff; border: none; padding: 16px 32px; font-size: 13px; font-weight: 600; border-radius: 6px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; }
 
-    #tracking-indicator { position: absolute; top: 15px; left: 15px; background: rgba(0, 0, 0, 0.6); color: #fff; padding: 6px 12px; font-size: 11px; border-radius: 12px; letter-spacing: 1px; text-transform: uppercase; z-index: 100; pointer-events: none; border: 1px solid rgba(255,255,255,0.15); }
+    #tracking-indicator { position: absolute; top: 15px; left: 15px; background: rgba(0, 0, 0, 0.6); color: #fff; padding: 6px 12px; font-size: 11px; border-radius: 12px; letter-spacing: 1px; text-transform: uppercase; z-index: 100; pointer-events: none; border: 1px solid rgba(255,255,255,0.15); display: none; }
     #media-dock { width: 100vw; height: 30vh; background-color: #ffffff; position: absolute; bottom: 0; left: 0; z-index: 1000; box-sizing: border-box; padding: 22px 24px; display: flex; flex-direction: column; justify-content: space-between; border-top: 1px solid #eaeaea; }
     
     .meta-block { display: flex; justify-content: space-between; align-items: flex-start; }
@@ -34,8 +37,11 @@
     .prov-divider { border: 0; border-top: 1px solid #e5e5e5; margin: 18px 0; }
     .prov-narrative { margin-top: 24px; font-style: italic; color: #444444; line-height: 1.6; font-size: 14px; background: #f5f5f7; padding: 16px; border-radius: 8px; border-left: 3px solid #111; }
 
-    /* Target rendering surfaces */
-    #ar-video-canvas { position: absolute; top: 0; left: 0; transform-origin: top left; pointer-events: none; z-index: 10; display: none; border-radius: 4px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+    /* Hide the default mindar loading splash screen elements to preserve the white-glove look */
+    .mindar-ui-loading, .mindar-ui-compatibility { display: none !important; }
+    
+    /* Ensure A-Frame context fills its designated container wrapper cleanly */
+    a-scene { width: 100% !important; height: 100% !important; display: none; }
   </style>
 </head>
 <body>
@@ -43,7 +49,7 @@
   <div id="ios-gatekeeper">
     <div class="gatekeeper-title">Studio Showcase</div>
     <div class="gatekeeper-sub">Tap below to authorize camera tracking layers and enter the live archive.</div>
-    <button class="gatekeeper-btn" onclick="startImmersiveScanner()">Start Scanning</button>
+    <button class="gatekeeper-btn" onclick="activateImmersiveScene()">Start Scanning</button>
   </div>
 
   <div id="provenance-panel">
@@ -53,9 +59,18 @@
     <div id="prov-content" class="prov-narrative">Scan an artwork target image link to view certified documentation metadata.</div>
   </div>
 
-  <div id="ar-container">
-    <div id="tracking-indicator">System: Initializing</div>
-    <canvas id="ar-video-canvas"></canvas>
+  <div id="ar-viewport">
+    <div id="tracking-indicator">System: Lens Active</div>
+
+    <a-scene 
+      mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiScanning: no;" 
+      embedded 
+      vr-mode-ui="enabled: false" 
+      renderer="colorManagement: true, logarithmicDepthBuffer: true"
+    >
+      <a-assets id="dynamic-assets"></a-assets>
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+    </a-scene>
   </div>
 
   <div id="media-dock">
@@ -73,93 +88,75 @@
 
   <script>
     let studioInventory = [];
-    let mindarThree = null;
-    let activeVideo = null;
-    let animationFrameId = null;
 
+    // Pre-cache central database asset configuration mappings
     document.addEventListener("DOMContentLoaded", async () => {
       try {
         const response = await fetch('./artworks.json');
-        if (!response.ok) throw new Error("JSON file missing.");
+        if (!response.ok) throw new Error("Central ledger database missing.");
         studioInventory = await response.json();
       } catch (err) {
-        document.getElementById('tracking-indicator').innerText = "Ledger Fault";
+        console.error("Initialization fault: ", err);
       }
     });
 
-    async function startImmersiveScanner() {
+    function activateImmersiveScene() {
+      // Transition CSS overlay view states immediately
       document.getElementById('ios-gatekeeper').style.display = 'none';
-      const indicator = document.getElementById('tracking-indicator');
-      indicator.innerText = "System: Active Scan";
+      document.getElementById('tracking-indicator').style.display = 'block';
+      
+      const sceneElement = document.querySelector('a-scene');
+      sceneElement.style.display = 'block';
 
-      // Initialize regular MindAR tracking matrix directly using our centralized index file
-      const controller = new window.MINDAR.IMAGE.Controller({
-        container: document.getElementById('ar-container'),
-        imageTargetSrc: './targets.mind'
+      const assetsContainer = document.getElementById('dynamic-assets');
+
+      // Iteratively build out entity map anchors to track everything in artworks.json
+      studioInventory.forEach((item, index) => {
+        // Build video configuration layer element
+        const videoElement = document.createElement('video');
+        videoElement.setAttribute('id', `vid-${index}`);
+        videoElement.setAttribute('src', `./${item.video}`);
+        videoElement.setAttribute('preload', 'auto');
+        videoElement.setAttribute('loop', 'true');
+        videoElement.setAttribute('muted', 'true');
+        videoElement.setAttribute('playsinline', '');
+        videoElement.setAttribute('webkit-playsinline', '');
+        videoElement.load();
+        assetsContainer.appendChild(videoElement);
+
+        // Bind MindAR A-Frame target anchors based on array positioning markers
+        const targetAnchor = document.createElement('a-entity');
+        targetAnchor.setAttribute('mindar-image-target', `targetIndex: ${index}`);
+
+        // Set up flat canvas video projection plane
+        const videoPlane = document.createElement('a-video');
+        videoPlane.setAttribute('src', `#vid-${index}`);
+        videoPlane.setAttribute('position', '0 0 0');
+        videoPlane.setAttribute('rotation', '0 0 0');
+        videoPlane.setAttribute('width', '1');
+        videoPlane.setAttribute('height', '1.3'); // Matches traditional portrait aspect ratios
+
+        targetAnchor.appendChild(videoPlane);
+
+        // Frame target event triggers
+        targetAnchor.addEventListener("targetFound", () => {
+          document.getElementById('tracking-indicator').innerText = "Target Detected";
+          document.getElementById('ui-title').innerText = item.title;
+          document.getElementById('ui-subtext').innerText = item.subtext;
+          document.getElementById('prov-content').innerText = item.provenance;
+          videoElement.play().catch(e => console.log("Video track unblocking sequence pending...", e));
+        });
+
+        targetAnchor.addEventListener("targetLost", () => {
+          document.getElementById('tracking-indicator').innerText = "System: Scanning Scene";
+          videoElement.pause();
+        });
+
+        sceneElement.appendChild(targetAnchor);
       });
 
-      await controller.addImageTargets('./targets.mind');
-      const { showcaseVideo, projectionCanvas } = createRenderElements();
-
-      await controller.start();
-      indicator.innerText = "Lens Active - Framing Target";
-
-      function renderLoop() {
-        const markerIndex = controller.getMatchTargetIndex();
-        if (markerIndex !== null && markerIndex >= 0 && studioInventory[markerIndex]) {
-          const item = studioInventory[markerIndex];
-          const pos = controller.getMarkerPosition(markerIndex);
-          
-          if (pos) {
-            indicator.innerText = "Target Detected";
-            document.getElementById('ui-title').innerText = item.title;
-            document.getElementById('ui-subtext').innerText = item.subtext;
-            document.getElementById('prov-content').innerText = item.provenance;
-
-            // Check if we need to swap the playing video source link
-            const targetVideoSrc = `./${item.video}`;
-            if (!activeVideo || activeVideo.getAttribute('src') !== targetVideoSrc) {
-              showcaseVideo.src = targetVideoSrc;
-              showcaseVideo.load();
-              showcaseVideo.play().catch(() => {});
-              activeVideo = showcaseVideo;
-            }
-
-            // Reposition overlay rendering dimensions directly over the physical painting frame coordinates
-            projectionCanvas.style.display = 'block';
-            projectionCanvas.style.width = `${pos.width}px`;
-            projectionCanvas.style.height = `${pos.height}px`;
-            projectionCanvas.style.left = `${pos.x}px`;
-            projectionCanvas.style.top = `${pos.y}px`;
-
-            const ctx = projectionCanvas.getContext('2d');
-            ctx.drawImage(showcaseVideo, 0, 0, projectionCanvas.width, projectionCanvas.height);
-          }
-        } else {
-          indicator.innerText = "System: Scanning Scene";
-          projectionCanvas.style.display = 'none';
-          if (activeVideo) {
-            showcaseVideo.pause();
-            activeVideo = null;
-          }
-        }
-        animationFrameId = requestAnimationFrame(renderLoop);
-      }
-      renderLoop();
-    }
-
-    function createRenderElements() {
-      const vid = document.createElement('video');
-      vid.muted = true;
-      vid.loop = true;
-      vid.setAttribute('playsinline', '');
-      vid.setAttribute('webkit-playsinline', '');
-      
-      const canvas = document.getElementById('ar-video-canvas');
-      canvas.width = 640;
-      canvas.height = 480;
-      
-      return { showcaseVideo: vid, projectionCanvas: canvas };
+      // Safely kick off camera stream sequence directly inside user click context window
+      sceneElement.systems["mindar-image-system"].start();
     }
 
     function switchDockTab(selectedTab) {
