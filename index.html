@@ -3,168 +3,69 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Studio Showcase Archive</title>
-
   <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-
   <style>
     body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: transparent; }
-    
-    #ios-gatekeeper { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #fff; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; text-align: center; }
-    .gatekeeper-title { font-size: 24px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 8px; }
-    .gatekeeper-sub { font-size: 14px; color: #666; margin-bottom: 32px; max-width: 280px; line-height: 1.5; }
-    .gatekeeper-btn { background: #000; color: #fff; border: none; padding: 16px 32px; font-size: 14px; font-weight: 600; border-radius: 6px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
-
-    .tracking-indicator { position: fixed; top: 20px; left: 20px; background: rgba(0,0,0,0.75); color: #fff; padding: 8px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; z-index: 999; pointer-events: none; }
-    
-    #media-dock { width: 100vw; height: 28vh; position: fixed; bottom: 0; left: 0; background-color: #ffffff; box-shadow: 0 -4px 25px rgba(0,0,0,0.15); border-top: 1px solid #e5e5e7; z-index: 999; box-sizing: border-box; border-radius: 16px 16px 0 0; }
-    .meta-block { display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding: 20px 24px 24px 24px; box-sizing: border-box; }
-    .art-title { font-size: 18px; font-weight: 600; color: #111; margin: 0 0 4px 0; }
+    #ios-gatekeeper { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #fff; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+    .gatekeeper-btn { background: #000; color: #fff; border: none; padding: 16px 32px; font-size: 14px; font-weight: 600; border-radius: 6px; cursor: pointer; text-transform: uppercase; }
+    .tracking-indicator { position: fixed; top: 20px; left: 20px; background: rgba(0,0,0,0.75); color: #fff; padding: 8px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; z-index: 999; text-transform: uppercase; }
+    #media-dock { width: 100vw; height: 28vh; position: fixed; bottom: 0; left: 0; background: #fff; box-shadow: 0 -4px 25px rgba(0,0,0,0.15); border-top: 1px solid #e5e5e7; z-index: 999; padding: 24px; box-sizing: border-box; border-radius: 16px 16px 0 0; }
+    .art-title { font-size: 18px; font-weight: 600; margin: 0 0 4px 0; }
     .art-sub { font-size: 13px; color: #666; margin: 0; }
-    .tabs-wrapper { display: flex; gap: 12px; margin-top: 12px; }
-    .tab-btn { flex: 1; padding: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 6px; cursor: pointer; text-align: center; border: 1px solid #000; transition: all 0.2s ease; }
-    .btn-active { background: #000; color: #fff; }
-    .btn-inactive { background: #fff; color: #000; }
-    #provenance-panel { display: none; font-size: 13px; color: #444; line-height: 1.6; margin-top: 8px; max-height: 55px; overflow-y: auto; }
-    
-    .mindar-ui-scanning { z-index: 99 !important; }
   </style>
 </head>
 <body>
 
   <div id="ios-gatekeeper">
-    <div class="gatekeeper-title">Studio Showcase</div>
-    <div class="gatekeeper-sub">Tap below to authorize camera tracking layers and enter the live archive.</div>
-    <button class="gatekeeper-btn" onclick="initializeStudioExperience()">Start Scanning</button>
+    <h1 style="font-size: 24px; margin-bottom: 8px;">Studio Showcase</h1>
+    <p style="font-size: 14px; color: #666; margin-bottom: 32px;">Tap below to launch camera tracking.</p>
+    <button class="gatekeeper-btn" onclick="initializeAR()">Start Scanning</button>
   </div>
 
   <div class="tracking-indicator" id="scan-badge">System: Offline</div>
 
-  <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiScanning: yes;" 
-           embedded vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
-    
-    <a-assets id="asset-library">
-      </a-assets>
+  <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiScanning: yes;" embedded vr-mode-ui="enabled: false">
+    <a-assets>
+      <video id="pines-video" src="./video-twin-pines-amazing.mp4" preload="auto" loop="true" crossorigin="anonymous" playsinline webkit-playsinline></video>
+    </a-assets>
 
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <g-ui-anchor-group id="automation-anchors"></g-ui-anchor-group>
-
+    <a-entity mindar-image-target="targetIndex: 0">
+       <a-video src="#pines-video" position="0 0 0" height="0.75" width="1"></a-video>
+    </a-entity>
   </a-scene>
 
   <div id="media-dock">
-    <div class="meta-block">
-      <div>
-        <h2 class="art-title" id="display-title">Scanning System Ready</h2>
-        <p class="art-sub" id="display-sub">Align lens frame directly over physical painting surface.</p>
-        <div id="provenance-panel"></div>
-      </div>
-      <div class="tabs-wrapper">
-        <button id="tab-media" class="tab-btn btn-active" onclick="switchDockTab('media')">Live Media</button>
-        <button id="tab-prov" class="tab-btn btn-inactive" onclick="switchDockTab('prov')">Provenance</button>
-      </div>
-    </div>
+    <h2 class="art-title" id="display-title">Scanning System Ready</h2>
+    <p class="art-sub" id="display-sub">Align lens frame directly over your physical painting.</p>
   </div>
 
   <script>
-    let registryData = [];
-    const activeVideos = {};
-
-    async function loadGalleryLedger() {
-      try {
-        const response = await fetch('./artworks.json?cb=' + Date.now());
-        if (response.ok) {
-          registryData = await response.json();
-          buildARWorkspace();
-        }
-      } catch (err) {
-        console.error("Ledger communication synchronization breakdown:", err);
-      }
-    }
-
-    function buildARWorkspace() {
-      const library = document.getElementById('asset-library');
-      const scene = document.querySelector('a-scene');
-
-      registryData.forEach((artwork, index) => {
-        // 1. Create and append the video element
-        const video = document.createElement('video');
-        video.setAttribute('id', `vid-${index}`);
-        video.setAttribute('src', `./${artwork.video}`);
-        video.setAttribute('preload', 'auto');
-        video.setAttribute('loop', 'true');
-        video.setAttribute('crossorigin', 'anonymous');
-        video.setAttribute('playsinline', 'true');
-        video.setAttribute('webkit-playsinline', 'true');
-        library.appendChild(video);
-        
-        activeVideos[index] = video;
-
-        // 2. Create and append the target anchor entity
-        const anchor = document.createElement('a-entity');
-        anchor.setAttribute('mindar-image-target', `targetIndex: ${index}`);
-        
-        // Create the video mesh surface inside the anchor
-        const videoMesh = document.createElement('a-video');
-        videoMesh.setAttribute('src', `#vid-${index}`);
-        videoMesh.setAttribute('position', '0 0 0');
-        videoMesh.setAttribute('height', '0.75');
-        videoMesh.setAttribute('width', '1');
-        videoMesh.setAttribute('rotation', '0 0 0');
-        
-        anchor.appendChild(videoMesh);
-
-        // 3. Bind recognition event handlers directly to this index item
-        anchor.addEventListener("targetFound", () => {
-          document.getElementById('scan-badge').innerText = "System: Locked";
-          document.getElementById('display-title').innerText = artwork.title;
-          document.getElementById('display-sub').innerText = artwork.subtext;
-          document.getElementById('provenance-panel').innerText = artwork.provenance || "No metadata listed.";
-          
-          if (activeVideos[index]) {
-            activeVideos[index].play().catch(e => console.log("Playback block handled:", e));
-          }
-        });
-
-        anchor.addEventListener("targetLost", () => {
-          document.getElementById('scan-badge').innerText = "System: Active Scan";
-          if (activeVideos[index]) {
-            activeVideos[index].pause();
-          }
-        });
-
-        scene.appendChild(anchor);
-      });
-    }
-
-    function initializeStudioExperience() {
+    function initializeAR() {
       document.getElementById('ios-gatekeeper').style.display = 'none';
       document.getElementById('scan-badge').innerText = "System: Active Scan";
-
+      
       const sceneEl = document.querySelector('a-scene');
       sceneEl.systems['mindar-image-system'].start();
-    }
 
-    function switchDockTab(targetTab) {
-      const panel = document.getElementById('provenance-panel');
-      const sub = document.getElementById('display-sub');
-      
-      if (targetTab === 'prov') {
-        document.getElementById('tab-prov').className = "tab-btn btn-active";
-        document.getElementById('tab-media').className = "tab-btn btn-inactive";
-        panel.style.display = "block";
-        sub.style.display = "none";
-      } else {
-        document.getElementById('tab-media').className = "tab-btn btn-active";
-        document.getElementById('tab-prov').className = "tab-btn btn-inactive";
-        panel.style.display = "none";
-        sub.style.display = "block";
-      }
-    }
+      const targetEntity = document.querySelector('[mindar-image-target]');
+      const videoEl = document.getElementById('pines-video');
 
-    window.addEventListener('DOMContentLoaded', loadGalleryLedger);
+      targetEntity.addEventListener("targetFound", () => {
+        document.getElementById('scan-badge').innerText = "System: Locked";
+        document.getElementById('display-title').innerText = "Twin Pines Amazing";
+        document.getElementById('display-sub').innerText = "Beautiful view from Georgian Bay, Ontario.";
+        videoEl.play();
+      });
+
+      targetEntity.addEventListener("targetLost", () => {
+        document.getElementById('scan-badge').innerText = "System: Active Scan";
+        videoEl.pause();
+      });
+    }
   </script>
 </body>
 </html>
