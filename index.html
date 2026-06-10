@@ -10,11 +10,8 @@
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
   <style>
-    /* Prevent standard DOM layouts from stepping on the hardware video canvas layer */
-    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #000; }
-    
-    /* Ensure the AR viewport fills the top area and permits native underlying camera pass-through */
-    #ar-viewport { width: 100vw; height: 70vh; position: relative; }
+    /* Force the body to be completely transparent so the injected device camera can be seen */
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: transparent; }
     
     /* Premium Gatekeeper screen bypassing iOS autoplay/interaction blocks */
     #ios-gatekeeper { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #fff; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; text-align: center; }
@@ -22,17 +19,22 @@
     .gatekeeper-sub { font-size: 14px; color: #666; margin-bottom: 32px; max-width: 280px; line-height: 1.5; }
     .gatekeeper-btn { background: #000; color: #fff; border: none; padding: 16px 32px; font-size: 14px; font-weight: 600; border-radius: 6px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
 
-    /* UI Overlay design specifications */
-    .tracking-indicator { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.75); color: #fff; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; z-index: 99; pointer-events: none; }
-    #media-dock { width: 100vw; height: 30vh; position: fixed; bottom: 0; left: 0; background-color: #ffffff; box-shadow: 0 -4px 20px rgba(0,0,0,0.05); border-top: 1px solid #e5e5e7; z-index: 99; box-sizing: border-box; }
-    .meta-block { display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding: 24px; box-sizing: border-box; }
+    /* UI Overlay design specifications floating safely above the raw camera canvas */
+    .tracking-indicator { position: fixed; top: 20px; left: 20px; background: rgba(0,0,0,0.75); color: #fff; padding: 8px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; z-index: 999; pointer-events: none; }
+    
+    /* Clean lower dock floating right on top of the fullscreen camera view */
+    #media-dock { width: 100vw; height: 28vh; position: fixed; bottom: 0; left: 0; background-color: #ffffff; box-shadow: 0 -4px 25px rgba(0,0,0,0.15); border-top: 1px solid #e5e5e7; z-index: 999; box-sizing: border-box; border-radius: 16px 16px 0 0; }
+    .meta-block { display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding: 20px 24px 24px 24px; box-sizing: border-box; }
     .art-title { font-size: 18px; font-weight: 600; color: #111; margin: 0 0 4px 0; }
     .art-sub { font-size: 13px; color: #666; margin: 0; }
-    .tabs-wrapper { display: flex; gap: 12px; margin-top: 16px; }
+    .tabs-wrapper { display: flex; gap: 12px; margin-top: 12px; }
     .tab-btn { flex: 1; padding: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 6px; cursor: pointer; text-align: center; border: 1px solid #000; transition: all 0.2s ease; }
     .btn-active { background: #000; color: #fff; }
     .btn-inactive { background: #fff; color: #000; }
-    #provenance-panel { display: none; font-size: 13px; color: #444; line-height: 1.6; margin-top: 12px; max-height: 65px; overflow-y: auto; }
+    #provenance-panel { display: none; font-size: 13px; color: #444; line-height: 1.6; margin-top: 8px; max-height: 55px; overflow-y: auto; }
+    
+    /* Ensure the system scanning frame overlays elegantly */
+    .mindar-ui-scanning { z-index: 99 !important; }
   </style>
 </head>
 <body>
@@ -43,23 +45,20 @@
     <button class="gatekeeper-btn" onclick="initializeStudioExperience()">Start Scanning</button>
   </div>
 
-  <div id="ar-viewport">
-    <div class="tracking-indicator" id="scan-badge">System: Offline</div>
+  <div class="tracking-indicator" id="scan-badge">System: Offline</div>
 
-    <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiScanning: yes;" 
-             embedded vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false"
-             style="width: 100%; height: 100%;">
-      
-      <a-assets id="asset-library">
-        </a-assets>
+  <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiScanning: yes;" 
+           embedded vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+    
+    <a-assets id="asset-library">
+      </a-assets>
 
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <a-entity id="target-anchor-0" mindar-image-target="targetIndex: 0">
-         <a-video id="ar-video-player" src="" position="0 0 0" height="0.75" width="1" rotation="0 0 0"></a-video>
-      </a-entity>
-    </a-scene>
-  </div>
+    <a-entity id="target-anchor-0" mindar-image-target="targetIndex: 0">
+       <a-video id="ar-video-player" src="" position="0 0 0" height="0.75" width="1" rotation="0 0 0"></a-video>
+    </a-entity>
+  </a-scene>
 
   <div id="media-dock">
     <div class="meta-block">
@@ -79,7 +78,6 @@
     let registryData = [];
     let currentVideoEl = null;
 
-    // Load local central ledger file entries
     async function loadGalleryLedger() {
       try {
         const response = await fetch('./artworks.json?cb=' + Date.now());
@@ -95,7 +93,7 @@
     function preloadMediaAssets() {
       const library = document.getElementById('asset-library');
       if (registryData && registryData.length > 0) {
-        // Point index reference explicitly to your latest compiled matrix item row
+        // Automatically target the latest entry uploaded to the dashboard
         const artwork = registryData[registryData.length - 1]; 
         
         const video = document.createElement('video');
@@ -117,7 +115,7 @@
       document.getElementById('ios-gatekeeper').style.display = 'none';
       document.getElementById('scan-badge').innerText = "System: Active Scan";
 
-      // Fire tracking pipeline initialization
+      // Fire tracking pipeline engine explicitly
       const sceneEl = document.querySelector('a-scene');
       sceneEl.systems['mindar-image-system'].start();
 
@@ -129,7 +127,7 @@
         if (latestArtwork) {
           document.getElementById('display-title').innerText = latestArtwork.title;
           document.getElementById('display-sub').innerText = latestArtwork.subtext;
-          document.getElementById('provenance-panel').innerText = latestArtwork.provenance || "No metadata listed.";
+          document.getElementById('provenance-panel').innerText = latestArtwork.provenance || "No track records updated.";
         }
         if (currentVideoEl) currentVideoEl.play();
       });
