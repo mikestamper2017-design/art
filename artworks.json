@@ -40,5 +40,12 @@
     "provenance": "Dumb",
     "image": "target-fak.jpg",
     "video": "video-fak.mp4"
+  },
+  {
+    "title": "Two pines lookout",
+    "subtext": "Acrylic on canvas",
+    "provenance": "Lots of history",
+    "image": "target-two-pines-lookout.jpg",
+    "video": "video-two-pines-lookout.mp4"
   }
 ]
