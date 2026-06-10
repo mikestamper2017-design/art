@@ -3,11 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Studio Registry - Direct Upload Dashboard</title>
-
-  <!-- MindAR standalone compiler build — exposes window.MINDAR.IMAGE.Compiler -->
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"></script>
-
+  <title>Studio Registry - Streamlined Dashboard</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f5f5f7; margin: 0; padding: 40px 20px; color: #111; }
     .container { max-width: 600px; background: #fff; margin: 0 auto; padding: 32px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
@@ -21,38 +17,21 @@
     .file-input-wrapper input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
     .btn { background: #000; color: #fff; border: none; width: 100%; padding: 14px; font-size: 14px; font-weight: 600; border-radius: 6px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 10px; }
     .btn:disabled { background: #999; cursor: not-allowed; }
-
-    /* Status messages */
-    #status-sheet { padding: 14px; border-radius: 6px; font-size: 13px; font-weight: 500; margin-top: 20px; display: none; line-height: 1.6; }
+    #status-sheet { padding: 14px; border-radius: 6px; font-size: 13px; font-weight: 500; margin-top: 20px; display: none; line-height: 1.5; }
     .status-processing { background: #e3f2fd; color: #0d47a1; border: 1px solid #bbdefb; }
-    .status-success   { background: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9; }
-    .status-error     { background: #ffebee; color: #b71c1c; border: 1px solid #ffcdd2; }
-
-    /* Compilation progress bar */
-    #compile-progress-wrap { display: none; margin-top: 16px; }
-    #compile-progress-wrap p { font-size: 12px; color: #555; margin: 0 0 6px 0; }
-    #compile-bar-track { background: #e0e0e0; border-radius: 4px; height: 8px; overflow: hidden; }
-    #compile-bar-fill  { background: #111; height: 100%; width: 0%; border-radius: 4px; transition: width 0.3s ease; }
-
-    /* Info banner */
-    .info-banner { background: #f0f4ff; border: 1px solid #c7d2fe; border-radius: 8px; padding: 12px 14px; font-size: 13px; color: #3730a3; line-height: 1.5; margin-bottom: 24px; }
-    .info-banner strong { font-weight: 600; }
+    .status-success { background: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9; }
+    .status-error { background: #ffebee; color: #b71c1c; border: 1px solid #ffcdd2; }
   </style>
 </head>
 <body>
+
   <div class="container">
     <h1>Studio Registry</h1>
-    <p class="subtitle">Publish new works directly from your iPad to the live gallery.</p>
-
-    <div class="info-banner">
-      <strong>Auto-compile enabled.</strong> When you publish, this tool will fetch all existing target images, 
-      add your new one, recompile <code>targets.mind</code>, and push everything to GitHub automatically.
-      Compilation takes ~5–30 seconds depending on how many paintings you have.
-    </div>
-
+    <p class="subtitle">Publish new works directly to the repository. The background compiler will generate the tracking matrix automatically.</p>
+    
     <div class="form-group">
       <label>GitHub Access Token</label>
-      <input type="password" id="gh-token" placeholder="Paste your fine-grained or classic token...">
+      <input type="password" id="gh-token" placeholder="Paste authentication key...">
     </div>
 
     <div class="form-group">
@@ -62,48 +41,38 @@
 
     <div class="form-group">
       <label>Medium / Subtext</label>
-      <input type="text" id="art-subtext" placeholder="e.g., Acrylic on Canvas, 24×36 in.">
+      <input type="text" id="art-subtext" placeholder="e.g., Acrylic on Canvas">
     </div>
 
     <div class="form-group">
-      <label>Provenance / Certificate Notes</label>
-      <textarea id="art-provenance" placeholder="Describe the work's history, materials, inspiration..."></textarea>
+      <label>Provenance Narrative Documentation</label>
+      <textarea id="art-provenance" placeholder="Describe canvas history layers..."></textarea>
     </div>
 
     <div class="form-group">
-      <label>Target Tracking Image (.JPG only)</label>
+      <label>Target Tracking Image File (.JPG / .JPEG)</label>
       <div class="file-input-wrapper">
         <span id="label-image">Select Raw Target Image</span>
-        <input type="file" id="file-target" accept="image/jpeg,image/jpg" onchange="updateFileLabel('file-target','label-image')">
+        <input type="file" id="file-target" accept="image/jpeg, image/jpg" onchange="updateFileLabel('file-target', 'label-image')">
       </div>
     </div>
 
     <div class="form-group">
-      <label>Video Overlay Layer (.MP4 only)</label>
+      <label>Video Layer Overlay (.MP4 / .MOV)</label>
       <div class="file-input-wrapper">
         <span id="label-video">Select Motion Asset</span>
-        <input type="file" id="file-video" accept="video/mp4" onchange="updateFileLabel('file-video','label-video')">
+        <input type="file" id="file-video" accept="video/mp4, video/quicktime" onchange="updateFileLabel('file-video', 'label-video')">
       </div>
     </div>
 
     <button id="submit-btn" class="btn" onclick="processStudioUpload()">Publish to Immersive Gallery</button>
-
-    <div id="compile-progress-wrap">
-      <p id="compile-progress-label">Compiling target recognition data…</p>
-      <div id="compile-bar-track"><div id="compile-bar-fill"></div></div>
-    </div>
-
     <div id="status-sheet"></div>
   </div>
 
   <script>
-    // ─── CONFIG ────────────────────────────────────────────────────────────────
     const GITHUB_USER = "mikestamper2017-design";
     const GITHUB_REPO = "art";
-    // The raw base URL for fetching files from your public repo
-    const RAW_BASE = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main`;
 
-    // ─── UI HELPERS ────────────────────────────────────────────────────────────
     function updateFileLabel(inputId, labelId) {
       const file = document.getElementById(inputId).files[0];
       document.getElementById(labelId).innerText = file ? file.name : "Select File";
@@ -111,212 +80,68 @@
 
     function showStatus(msg, type) {
       const box = document.getElementById('status-sheet');
-      box.innerHTML = msg;
+      box.innerText = msg;
       box.className = `status-${type}`;
       box.style.display = 'block';
     }
 
-    function setProgress(pct, label) {
-      document.getElementById('compile-progress-wrap').style.display = 'block';
-      document.getElementById('compile-bar-fill').style.width = pct + '%';
-      if (label) document.getElementById('compile-progress-label').innerText = label;
-    }
-
-    function hideProgress() {
-      document.getElementById('compile-progress-wrap').style.display = 'none';
-    }
-
-    // ─── MAIN UPLOAD FLOW ──────────────────────────────────────────────────────
     async function processStudioUpload() {
-      const token      = document.getElementById('gh-token').value.trim();
-      const title      = document.getElementById('art-title').value.trim();
-      const subtext    = document.getElementById('art-subtext').value.trim();
+      const token = document.getElementById('gh-token').value.trim();
+      const title = document.getElementById('art-title').value.trim();
+      const subtext = document.getElementById('art-subtext').value.trim();
       const provenance = document.getElementById('art-provenance').value.trim();
       const targetFile = document.getElementById('file-target').files[0];
-      const videoFile  = document.getElementById('file-video').files[0];
-      const btn        = document.getElementById('submit-btn');
+      const videoFile = document.getElementById('file-video').files[0];
+      const btn = document.getElementById('submit-btn');
 
       if (!token || !title || !targetFile || !videoFile) {
-        showStatus("Please fill in all fields and select both files before publishing.", "error");
+        showStatus("Please ensure all parameters and files are assigned.", "error");
         return;
       }
 
       btn.disabled = true;
-      hideProgress();
-
       const assetSlug = title.toLowerCase().replace(/[^a-z0-9]/g, "-");
-      const videoName = `video-${assetSlug}.mp4`;
+      
+      // Force consistent file extensions for the background action script
+      const videoExt = videoFile.name.toLowerCase().endsWith('.mov') ? 'mov' : 'mp4';
+      const videoName = `video-${assetSlug}.${videoExt}`;
       const imageName = `target-${assetSlug}.jpg`;
 
       try {
-        // 1. Encode new files to base64
-        showStatus("Reading and encoding your files…", "processing");
-        const videoBase64 = await fileToBase64(videoFile);
-        const imageBase64 = await fileToBase64(targetFile);
+        showStatus("Encoding files for transfer...", "processing");
+        const videoBase64 = await convertFileToBase64(videoFile);
+        const imageBase64 = await convertFileToBase64(targetFile);
 
-        // 2. Push video to GitHub
-        showStatus(`Uploading video: ${videoName}…`, "processing");
-        await pushToGitHub(token, videoName, videoBase64, `Add video for: ${title}`);
+        showStatus(`Streaming motion layer: ${videoName}...`, "processing");
+        await pushFileToGitHub(token, videoName, videoBase64, `Upload video layer for ${title}`);
 
-        // 3. Push target image to GitHub
-        showStatus(`Uploading target image: ${imageName}…`, "processing");
-        await pushToGitHub(token, imageName, imageBase64, `Add target image for: ${title}`);
+        showStatus(`Streaming tracking snapshot target: ${imageName}...`, "processing");
+        await pushFileToGitHub(token, imageName, imageBase64, `Upload image target for ${title}`);
 
-        // 4. Update artworks.json ledger
-        showStatus("Updating gallery ledger (artworks.json)…", "processing");
-        await appendToLedger(token, { title, subtext, provenance, image: imageName, video: videoName });
+        showStatus("Writing details to main registry ledger database...", "processing");
+        await appendRecordToLedger(token, { title, subtext, provenance, image: imageName, video: videoName });
 
-        // 5. Recompile targets.mind — the key new step
-        showStatus("Fetching all existing target images for recompilation…", "processing");
-        setProgress(5, "Loading existing target images from GitHub…");
-
-        const allTargetImages = await fetchAllTargetImages(token, imageName, targetFile);
-
-        setProgress(20, `Compiling recognition data for ${allTargetImages.length} artwork(s)… (this may take 10–30 seconds)`);
-
-        const mindFileBuffer = await compileMindFile(allTargetImages, (progress) => {
-          // progress is 0–1 from MindAR compiler
-          const pct = 20 + Math.round(progress * 70);
-          setProgress(pct, `Compiling… ${Math.round(progress * 100)}% complete`);
-        });
-
-        setProgress(92, "Pushing compiled targets.mind to GitHub…");
-        await pushMindFileToGitHub(token, mindFileBuffer);
-
-        setProgress(100, "Done!");
-        hideProgress();
-
-        showStatus(
-          `✓ <strong>${title}</strong> published successfully!<br><br>` +
-          `• Video and target image uploaded<br>` +
-          `• Gallery ledger updated<br>` +
-          `• <code>targets.mind</code> recompiled with all ${allTargetImages.length} artwork(s)<br><br>` +
-          `Clear Safari cache on your viewer device and test the live AR experience.`,
-          "success"
-        );
-
-        // Reset form fields (keep token for convenience)
+        showStatus("Successfully uploaded! The background compilation script has been triggered. Wait 15 seconds, clear Safari cache, and test your viewer.", "success");
         document.getElementById('art-title').value = '';
         document.getElementById('art-subtext').value = '';
         document.getElementById('art-provenance').value = '';
-        document.getElementById('file-target').value = '';
-        document.getElementById('file-video').value = '';
-        document.getElementById('label-image').innerText = 'Select Raw Target Image';
-        document.getElementById('label-video').innerText = 'Select Motion Asset';
-
       } catch (err) {
-        hideProgress();
-        showStatus(`Upload failed: ${err.message}<br><br>Check your GitHub token has write access to the repo.`, "error");
-        console.error(err);
+        showStatus(`Upload Error: ${err.message}`, "error");
       } finally {
         btn.disabled = false;
       }
     }
 
-    // ─── FETCH ALL EXISTING TARGET IMAGES ─────────────────────────────────────
-    // Reads artworks.json to find all target image filenames already in the repo,
-    // downloads each one, then adds the newly uploaded image at the correct index.
-    async function fetchAllTargetImages(token, newImageName, newImageFile) {
-      // Get the current ledger to know what images already exist
-      const ledgerUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/artworks.json`;
-      let existingArtworks = [];
-
-      try {
-        const res = await fetch(ledgerUrl, { headers: { "Authorization": `token ${token}` } });
-        if (res.ok) {
-          const data = await res.json();
-          existingArtworks = JSON.parse(atob(data.content));
-        }
-      } catch (e) {
-        // No ledger yet — first upload, nothing to fetch
-      }
-
-      // Download each existing target image as an HTMLImageElement
-      const imageElements = [];
-
-      for (let i = 0; i < existingArtworks.length; i++) {
-        const artwork = existingArtworks[i];
-        // Skip the slot if it matches the new image (handles re-upload / update)
-        if (artwork.image === newImageName) continue;
-
-        setProgress(
-          5 + Math.round((i / existingArtworks.length) * 12),
-          `Fetching existing target ${i + 1} of ${existingArtworks.length}: ${artwork.title}…`
-        );
-
-        try {
-          const img = await loadImageFromURL(`${RAW_BASE}/${artwork.image}`);
-          imageElements.push(img);
-        } catch (e) {
-          console.warn(`Could not load existing target image: ${artwork.image}`, e);
-          // If an image fails to load, skip it rather than crashing the whole compile
-        }
-      }
-
-      // Add the NEW image last (it will be the final index in the compiled .mind file,
-      // matching the order we just appended it to artworks.json)
-      const newImg = await fileToHTMLImage(newImageFile);
-      imageElements.push(newImg);
-
-      return imageElements;
-    }
-
-    // ─── MINDAR IN-BROWSER COMPILATION ────────────────────────────────────────
-    async function compileMindFile(imageElements, onProgress) {
-      // mindar-image-three.prod.js exposes the compiler — try both known paths
-      const MindARCompiler =
-        (window.MINDAR && window.MINDAR.IMAGE && window.MINDAR.IMAGE.Compiler) ||
-        (window.MindAR && window.MindAR.Compiler);
-      if (!MindARCompiler) {
-        throw new Error("MindAR compiler not available. Try a hard-refresh (hold Shift and tap reload).");
-      }
-      const compiler = new MindARCompiler();
-
-      // processImages returns a Promise; it calls onProgress(0–1) as it works
-      await compiler.compileImageTargets(imageElements, onProgress);
-
-      // Export returns an ArrayBuffer of the .mind binary
-      const buffer = await compiler.exportData();
-      return buffer;
-    }
-
-    // ─── PUSH COMPILED .MIND FILE TO GITHUB ───────────────────────────────────
-    async function pushMindFileToGitHub(token, arrayBuffer) {
-      const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/targets.mind`;
-
-      // Check if the file already exists (need its SHA to update it)
-      let sha = null;
-      try {
-        const res = await fetch(url, { headers: { "Authorization": `token ${token}` } });
-        if (res.ok) {
-          const data = await res.json();
-          sha = data.sha;
-        }
-      } catch (e) {}
-
-      // Convert ArrayBuffer → base64
-      const base64 = arrayBufferToBase64(arrayBuffer);
-
-      const body = {
-        message: "Auto-recompile targets.mind",
-        content: base64
-      };
-      if (sha) body.sha = sha;
-
-      const res = await fetch(url, {
-        method: "PUT",
-        headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify(body)
+    function convertFileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = error => reject(error);
       });
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(`Failed to push targets.mind: ${errData.message || res.status}`);
-      }
     }
 
-    // ─── GITHUB FILE PUSH (generic) ───────────────────────────────────────────
-    async function pushToGitHub(token, filename, base64Content, commitMsg) {
+    async function pushFileToGitHub(token, filename, base64Content, commitMsg) {
       const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${filename}`;
       let sha = null;
       try {
@@ -332,11 +157,10 @@
         headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify(body)
       });
-      if (!res.ok) throw new Error(`Failed to upload: ${filename}`);
+      if (!res.ok) throw new Error(`Failed to transmit file: ${filename}`);
     }
 
-    // ─── UPDATE artworks.json LEDGER ──────────────────────────────────────────
-    async function appendToLedger(token, newArtwork) {
+    async function appendRecordToLedger(token, newArtwork) {
       const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/artworks.json`;
       let sha = null;
       let inventory = [];
@@ -348,73 +172,15 @@
         inventory = JSON.parse(atob(data.content));
       }
 
-      // Replace existing entry with same image name (update), or append (new)
-      const existingIdx = inventory.findIndex(a => a.image === newArtwork.image);
-      if (existingIdx >= 0) {
-        inventory[existingIdx] = newArtwork;
-      } else {
-        inventory.push(newArtwork);
-      }
-
+      inventory.push(newArtwork);
       const updatedBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(inventory, null, 2))));
+
       const putRes = await fetch(url, {
         method: "PUT",
         headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: `Registry update: ${newArtwork.title}`,
-          content: updatedBase64,
-          sha
-        })
+        body: JSON.stringify({ message: `Automated ledger indexing for: ${newArtwork.title}`, content: updatedBase64, sha })
       });
-      if (!putRes.ok) throw new Error("Failed to update artworks.json ledger.");
-    }
-
-    // ─── UTILITY FUNCTIONS ────────────────────────────────────────────────────
-
-    // File → base64 string (for GitHub API)
-    function fileToBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload  = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = reject;
-      });
-    }
-
-    // File → HTMLImageElement (for MindAR compiler)
-    function fileToHTMLImage(file) {
-      return new Promise((resolve, reject) => {
-        const url = URL.createObjectURL(file);
-        const img = new Image();
-        img.onload  = () => { URL.revokeObjectURL(url); resolve(img); };
-        img.onerror = reject;
-        img.src = url;
-      });
-    }
-
-    // URL → HTMLImageElement (for fetching existing targets from GitHub)
-    function loadImageFromURL(url) {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = "anonymous"; // required for canvas/compiler access
-        img.onload  = () => resolve(img);
-        img.onerror = () => reject(new Error(`Could not load image: ${url}`));
-        // Cache-bust to avoid stale CDN copies of recently updated images
-        img.src = url + '?cb=' + Date.now();
-      });
-    }
-
-    // ArrayBuffer → base64 (for pushing binary .mind file to GitHub)
-    function arrayBufferToBase64(buffer) {
-      let binary = '';
-      const bytes = new Uint8Array(buffer);
-      // Process in chunks to avoid call stack overflow on large files
-      const chunkSize = 8192;
-      for (let i = 0; i < bytes.length; i += chunkSize) {
-        const chunk = bytes.subarray(i, i + chunkSize);
-        binary += String.fromCharCode.apply(null, chunk);
-      }
-      return btoa(binary);
+      if (!putRes.ok) throw new Error("Central ledger entry update transaction rejected.");
     }
   </script>
 </body>
