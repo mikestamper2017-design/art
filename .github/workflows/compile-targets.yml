@@ -2,8 +2,7 @@ name: Automated MindAR Compiler
 on:
   push:
     paths:
-      - 'target-*.jpg'
-      - 'target-*.jpeg'
+      - 'target-*'
 
 jobs:
   build-tracking-matrix:
@@ -23,8 +22,8 @@ jobs:
           npm install -g mind-ar@1.2.5
           
           echo "System: Scanning studio raw targets..."
-          # Gather all target files into a regular unquoted list
-          IMAGES=$(ls target-*.jpg target-*.jpeg 2>/dev/null | tr '\n' ' ')
+          # Broad scan to make sure it picks up hyphenated files like target-two-pines-lookout.jpg
+          IMAGES=$(ls target-* 2>/dev/null | tr '\n' ' ')
           
           if [ -z "$IMAGES" ]; then
             echo "Error: No matching raw images found to process."
@@ -32,7 +31,6 @@ jobs:
           fi
           
           echo "Compiling tracking vectors for targets: $IMAGES"
-          # Unquoted argument passing allows the compiler CLI to parse each file individually
           npx mindar-image-compile $IMAGES targets.mind
 
       - name: Commit Compiled Matrix Back to Main
