@@ -5,60 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Mike Stamper - Immersive Fine Art Archive</title>
-  
-  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+
+  <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-  
+
   <style>
-    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: transparent !important; }
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    #ar-viewport { width: 100vw; height: 70vh; position: relative; background-color: #000; }
     
-    #ar-viewport { width: 100vw; height: 70vh; position: relative; overflow: hidden; background-color: transparent !important; }
-    
-    /* CRITICAL SAFARI FIX: Force the automatic background video layer to be visible and fill the container */
-    video, .a-canvas {
-      position: absolute !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      object-fit: cover !important;
-      z-index: 1 !important;
-    }
+    /* Premium Intro Gatekeeper screen bypassing iOS autoplay/interaction blocks */
+    #ios-gatekeeper { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #fff; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; text-align: center; }
+    .gatekeeper-title { font-size: 24px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 8px; }
+    .gatekeeper-sub { font-size: 14px; color: #666; margin-bottom: 32px; max-width: 280px; line-height: 1.5; }
+    .gatekeeper-btn { background: #000; color: #fff; border: none; padding: 16px 32px; font-size: 14px; font-weight: 600; border-radius: 6px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
 
-    /* Keep the interactive 3D layer sitting precisely over the webcam feed */
-    a-scene {
-      width: 100% !important;
-      height: 100% !important;
-      position: absolute !important;
-      top: 0;
-      left: 0;
-      z-index: 2 !important;
-    }
-    
-    /* White-glove gatekeeper overlay to guarantee user action context */
-    #ios-gatekeeper { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #fff; z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box; }
-    .gatekeeper-title { font-size: 24px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 8px; color: #111; }
-    .gatekeeper-sub { font-size: 14px; color: #666; margin-bottom: 32px; max-width: 300px; line-height: 1.5; }
-    .gatekeeper-btn { background: #000; color: #fff; border: none; padding: 16px 32px; font-size: 13px; font-weight: 600; border-radius: 6px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; }
-
-    #tracking-indicator { position: absolute; top: 15px; left: 15px; background: rgba(0, 0, 0, 0.6); color: #fff; padding: 6px 12px; font-size: 11px; border-radius: 12px; letter-spacing: 1px; text-transform: uppercase; z-index: 100; pointer-events: none; border: 1px solid rgba(255,255,255,0.15); display: none; }
-    #media-dock { width: 100vw; height: 30vh; background-color: #ffffff; position: absolute; bottom: 0; left: 0; z-index: 1000; box-sizing: border-box; padding: 22px 24px; display: flex; flex-direction: column; justify-content: space-between; border-top: 1px solid #eaeaea; }
-    
-    .meta-block { display: flex; justify-content: space-between; align-items: flex-start; }
-    .art-title { font-size: 19px; font-weight: 600; color: #111111; margin: 0; letter-spacing: -0.3px; }
-    .art-collection { font-size: 13px; color: #777777; margin: 4px 0 0 0; }
-    
-    .control-row { display: flex; gap: 10px; margin-top: auto; }
-    .tab-trigger { flex: 1; padding: 12px; border: 1px solid #111111; background: transparent; color: #111111; font-weight: 500; font-size: 13px; border-radius: 6px; cursor: pointer; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; }
-    .tab-trigger.active { background: #111111; color: #ffffff; }
-
-    #provenance-panel { display: none; position: absolute; top: 0; left: 0; width: 100vw; height: 70vh; background: rgba(255, 255, 255, 0.98); z-index: 1500; box-sizing: border-box; padding: 40px 30px; overflow-y: auto; color: #111111; }
-    .prov-header { text-transform: uppercase; letter-spacing: 2px; font-size: 13px; color: #666666; margin: 0 0 4px 0; font-weight: 600; }
-    .prov-divider { border: 0; border-top: 1px solid #e5e5e5; margin: 18px 0; }
-    .prov-narrative { margin-top: 24px; font-style: italic; color: #444444; line-height: 1.6; font-size: 14px; background: #f5f5f7; padding: 16px; border-radius: 8px; border-left: 3px solid #111; }
-
-    /* Clean white-glove hide rules for default loading frames */
-    .mindar-ui-loading, .mindar-ui-compatibility { display: none !important; }
+    /* UI Overlay elements */
+    .tracking-indicator { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.75); color: #fff; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; z-index: 100; pointer-events: none; }
+    #media-dock { width: 100vw; height: 30vh; position: relative; background-color: #ffffff; box-shadow: 0 -4px 20px rgba(0,0,0,0.05); border-top: 1px solid #e5e5e7; z-index: 100; box-sizing: border-box; }
+    .meta-block { display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding: 24px; box-sizing: border-box; }
+    .art-title { font-size: 18px; font-weight: 600; color: #111; margin: 0 0 4px 0; }
+    .art-sub { font-size: 13px; color: #666; margin: 0; }
+    .tabs-wrapper { display: flex; gap: 12px; margin-top: 16px; }
+    .tab-btn { flex: 1; padding: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 6px; cursor: pointer; text-align: center; border: 1px solid #000; transition: all 0.2s ease; }
+    .btn-active { background: #000; color: #fff; }
+    .btn-inactive { background: #fff; color: #000; }
+    #provenance-panel { display: none; font-size: 13px; color: #444; line-height: 1.6; margin-top: 12px; max-height: 80px; overflow-y: auto; }
   </style>
 </head>
 <body>
@@ -66,125 +37,124 @@
   <div id="ios-gatekeeper">
     <div class="gatekeeper-title">Studio Showcase</div>
     <div class="gatekeeper-sub">Tap below to authorize camera tracking layers and enter the live archive.</div>
-    <button class="gatekeeper-btn" onclick="activateImmersiveScene()">Start Scanning</button>
-  </div>
-
-  <div id="provenance-panel">
-    <div class="prov-header">Registry Documentation</div>
-    <h2 style="margin: 0 0 15px 0; font-size: 22px; font-weight: 500;">Certificate of Authenticity</h2>
-    <div class="prov-divider"></div>
-    <div id="prov-content" class="prov-narrative">Scan an artwork target image link to view certified documentation metadata.</div>
+    <button class="gatekeeper-btn" onclick="initializeStudioExperience()">Start Scanning</button>
   </div>
 
   <div id="ar-viewport">
-    <div id="tracking-indicator">System: Lens Active</div>
+    <div class="tracking-indicator" id="scan-badge">System: Initializing...</div>
 
-    <a-scene 
-      mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiScanning: no;" 
-      embedded 
-      vr-mode-ui="enabled: false" 
-      renderer="colorManagement: true, logarithmicDepthBuffer: true"
-    >
-      <a-assets id="dynamic-assets"></a-assets>
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: yes; uiScanning: yes;" 
+             embedded vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+      
+      <a-assets id="asset-library">
+        </a-assets>
+
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <a-entity id="target-anchor-0" mindar-image-target="targetIndex: 0">
+         <a-video id="ar-video-player" src="" position="0 0 0" height="1" width="1" rotation="0 0 0"></a-video>
+      </a-entity>
     </a-scene>
   </div>
 
   <div id="media-dock">
     <div class="meta-block">
       <div>
-        <h1 class="art-title" id="ui-title">Studio Showcase Collection</h1>
-        <p class="art-collection" id="ui-subtext">Scan an artwork to activate video layer overlay</p>
+        <h2 class="art-title" id="display-title">Scanning System Ready</h2>
+        <p class="art-sub" id="display-sub">Align lens frame directly over physical painting surface.</p>
+        <div id="provenance-panel"></div>
       </div>
-    </div>
-    <div class="control-row">
-      <button id="tab-media" class="tab-trigger active" onclick="switchDockTab('media')">Live Media</button>
-      <button id="tab-prov" class="tab-trigger" onclick="switchDockTab('provenance')">Provenance</button>
+      <div class="tabs-wrapper">
+        <button id="tab-media" class="tab-btn btn-active" onclick="switchDockTab('media')">Live Media</button>
+        <button id="tab-prov" class="tab-btn btn-inactive" onclick="switchDockTab('prov')">Provenance</button>
+      </div>
     </div>
   </div>
 
   <script>
-    let studioInventory = [];
+    let registryData = [];
+    let currentVideoEl = null;
 
-    document.addEventListener("DOMContentLoaded", async () => {
+    // Load ledger dynamically to align metadata with tracked target matrices
+    async function loadGalleryLedger() {
       try {
-        const response = await fetch('./artworks.json');
-        if (!response.ok) throw new Error("JSON file missing.");
-        studioInventory = await response.json();
+        const response = await fetch('./artworks.json?cb=' + Date.now());
+        if (response.ok) {
+          registryData = await response.json();
+          preloadMediaAssets();
+        }
       } catch (err) {
-        console.error("Ledger fault: ", err);
+        console.error("Ledger communication synchronization breakdown:", err);
       }
-    });
+    }
 
-    function activateImmersiveScene() {
+    function preloadMediaAssets() {
+      const library = document.getElementById('asset-library');
+      registryData.forEach((artwork, index) => {
+        if (index === 0) { // Mapping active focus to your current compiled matrix index
+          const video = document.createElement('video');
+          video.setAttribute('id', `source-video-${index}`);
+          video.setAttribute('src', `./${artwork.video}`);
+          video.setAttribute('preload', 'auto');
+          video.setAttribute('loop', 'true');
+          video.setAttribute('crossorigin', 'anonymous');
+          video.setAttribute('playsinline', 'true');
+          video.setAttribute('webkit-playsinline', 'true');
+          library.appendChild(video);
+          
+          // Connect preloaded element straight to our AR viewport mesh frame
+          document.getElementById('ar-video-player').setAttribute('src', `#source-video-${index}`);
+          currentVideoEl = video;
+        }
+      });
+    }
+
+    function initializeStudioExperience() {
       document.getElementById('ios-gatekeeper').style.display = 'none';
-      document.getElementById('tracking-indicator').style.display = 'block';
+      document.getElementById('scan-badge').innerText = "System: Active Scan";
+
+      // Start AR.js pipeline engines directly
+      const sceneEl = document.querySelector('a-scene');
+      sceneEl.systems['mindar-image-system'].start();
+
+      // Setup tracking matrix event bindings
+      const anchor = document.getElementById('target-anchor-0');
       
-      const sceneElement = document.querySelector('a-scene');
-      const assetsContainer = document.getElementById('dynamic-assets');
-
-      studioInventory.forEach((item, index) => {
-        // Build video configuration layers smoothly
-        const videoElement = document.createElement('video');
-        videoElement.setAttribute('id', `vid-${index}`);
-        videoElement.setAttribute('src', `./${item.video}`);
-        videoElement.setAttribute('preload', 'auto');
-        videoElement.setAttribute('loop', 'true');
-        videoElement.setAttribute('muted', 'true');
-        videoElement.setAttribute('playsinline', '');
-        videoElement.setAttribute('webkit-playsinline', '');
-        videoElement.load();
-        assetsContainer.appendChild(videoElement);
-
-        // Map target anchor references precisely to index ordering inside targets.mind
-        const targetAnchor = document.createElement('a-entity');
-        targetAnchor.setAttribute('mindar-image-target', `targetIndex: ${index}`);
-
-        // Flat projection canvas card scaled for standard art compositions
-        const videoPlane = document.createElement('a-video');
-        videoPlane.setAttribute('src', `#vid-${index}`);
-        videoPlane.setAttribute('position', '0 0 0');
-        videoPlane.setAttribute('rotation', '0 0 0');
-        videoPlane.setAttribute('width', '1');
-        videoPlane.setAttribute('height', '1.3');
-
-        targetAnchor.appendChild(videoPlane);
-
-        targetAnchor.addEventListener("targetFound", () => {
-          document.getElementById('tracking-indicator').innerText = "Target Detected";
-          document.getElementById('ui-title').innerText = item.title;
-          document.getElementById('ui-subtext').innerText = item.subtext;
-          document.getElementById('prov-content').innerText = item.provenance;
-          videoElement.play().catch(e => console.log("Awaiting track override context...", e));
-        });
-
-        targetAnchor.addEventListener("targetLost", () => {
-          document.getElementById('tracking-indicator').innerText = "System: Scanning Scene";
-          videoElement.pause();
-        });
-
-        sceneElement.appendChild(targetAnchor);
+      anchor.addEventListener("targetFound", () => {
+        document.getElementById('scan-badge').innerText = "System: Locked";
+        if (registryData[0]) {
+          document.getElementById('display-title').innerText = registryData[0].title;
+          document.getElementById('display-sub').innerText = registryData[0].subtext;
+          document.getElementById('provenance-panel').innerText = registryData[0].provenance || "No custom ledger notes provided.";
+        }
+        if (currentVideoEl) currentVideoEl.play();
       });
 
-      // Safely kick off hardware execution stack within user interaction thread
-      sceneElement.systems["mindar-image-system"].start();
+      anchor.addEventListener("targetLost", () => {
+        document.getElementById('scan-badge').innerText = "System: Active Scan";
+        if (currentVideoEl) currentVideoEl.pause();
+      });
     }
 
-    function switchDockTab(selectedTab) {
-      const mediaTabBtn = document.getElementById('tab-media');
-      const provTabBtn = document.getElementById('tab-prov');
-      const provenanceSheet = document.getElementById('provenance-panel');
-
-      if (selectedTab === 'provenance') {
-        provenanceSheet.style.display = 'block';
-        provTabBtn.classList.add('active');
-        mediaTabBtn.classList.remove('active');
+    function switchDockTab(targetTab) {
+      const panel = document.getElementById('provenance-panel');
+      const sub = document.getElementById('display-sub');
+      
+      if (targetTab === 'prov') {
+        document.getElementById('tab-prov').className = "tab-btn btn-active";
+        document.getElementById('tab-media').className = "tab-btn btn-inactive";
+        panel.style.display = "block";
+        sub.style.display = "none";
       } else {
-        provenanceSheet.style.display = 'none';
-        mediaTabBtn.classList.add('active');
-        provTabBtn.classList.remove('active');
+        document.getElementById('tab-media').className = "tab-btn btn-active";
+        document.getElementById('tab-prov').className = "tab-btn btn-inactive";
+        panel.style.display = "none";
+        sub.style.display = "block";
       }
     }
+
+    // Initialize layout settings
+    window.addEventListener('DOMContentLoaded', loadGalleryLedger);
   </script>
 </body>
 </html>
