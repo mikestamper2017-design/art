@@ -3,11 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Studio Registry - Automated AR Compiler Dashboard</title>
-  
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-compiler.prod.js"></script>
-  
+  <title>Studio Registry - Direct Upload Dashboard</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f5f5f7; margin: 0; padding: 40px 20px; color: #111; }
     .container { max-width: 600px; background: #fff; margin: 0 auto; padding: 32px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
@@ -19,9 +15,8 @@
     textarea { height: 90px; resize: vertical; }
     .file-input-wrapper { background: #fafafa; border: 1px dashed #ccc; padding: 16px; border-radius: 6px; text-align: center; cursor: pointer; position: relative; }
     .file-input-wrapper input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-    .btn { background: #000; color: #fff; border: none; width: 100%; padding: 14px; font-size: 14px; font-weight: 600; border-radius: 6px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 10px; transition: background 0.2s ease; }
+    .btn { background: #000; color: #fff; border: none; width: 100%; padding: 14px; font-size: 14px; font-weight: 600; border-radius: 6px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 10px; }
     .btn:disabled { background: #999; cursor: not-allowed; }
-    
     #status-sheet { padding: 14px; border-radius: 6px; font-size: 13px; font-weight: 500; margin-top: 20px; display: none; line-height: 1.5; }
     .status-processing { background: #e3f2fd; color: #0d47a1; border: 1px solid #bbdefb; }
     .status-success { background: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9; }
@@ -32,11 +27,11 @@
 
   <div class="container">
     <h1>Studio Registry</h1>
-    <p class="subtitle">Upload artwork parameters. The background compiler builds tracking vectors directly from your canvas photo instantly.</p>
+    <p class="subtitle">Publish new works directly from your iPad to the live gallery database instantly without compilation files.</p>
     
     <div class="form-group">
       <label>GitHub Access Token</label>
-      <input type="password" id="gh-token" placeholder="Paste security variable identifier keys...">
+      <input type="password" id="gh-token" placeholder="Paste authentication key...">
     </div>
 
     <div class="form-group">
@@ -51,7 +46,7 @@
 
     <div class="form-group">
       <label>Provenance Narrative Documentation</label>
-      <textarea id="art-provenance" placeholder="Describe historical, thematic registry markers..."></textarea>
+      <textarea id="art-provenance" placeholder="Describe canvas history layers..."></textarea>
     </div>
 
     <div class="form-group">
@@ -71,7 +66,6 @@
     </div>
 
     <button id="submit-btn" class="btn" onclick="processStudioUpload()">Publish to Immersive Gallery</button>
-    
     <div id="status-sheet"></div>
   </div>
 
@@ -91,19 +85,6 @@
       box.style.display = 'block';
     }
 
-    // Resolves the exact constructor path depending on how the browser assigns MindAR's compiler properties
-    function getCompilerInstance() {
-      if (window.MINDAR && window.MINDAR.IMAGE && window.MINDAR.IMAGE.Compiler) {
-        return new window.MINDAR.IMAGE.Compiler();
-      } else if (window.MINDAR && window.MINDAR.Compiler) {
-        return new window.MINDAR.Compiler();
-      } else if (window.MindAR && window.MindAR.Compiler) {
-        return new window.MindAR.Compiler();
-      } else {
-        throw new Error("Tracking component engine architecture script allocation failed to load.");
-      }
-    }
-
     async function processStudioUpload() {
       const token = document.getElementById('gh-token').value.trim();
       const title = document.getElementById('art-title').value.trim();
@@ -114,7 +95,7 @@
       const btn = document.getElementById('submit-btn');
 
       if (!token || !title || !targetFile || !videoFile) {
-        showStatus("Please ensure token, title, and both structural files are allocated.", "error");
+        showStatus("Please ensure all parameters and files are assigned.", "error");
         return;
       }
 
@@ -124,97 +105,28 @@
       const imageName = `target-${assetSlug}.jpg`;
 
       try {
-        // Step 1: Initialize local compiler and test constructor properties immediately
-        showStatus("Phase 1: Instantiating tracking calculation processors...", "processing");
-        const testCompiler = getCompilerInstance();
-
-        showStatus("Phase 2: Local compiler active. Analyzing and mapping canvas image contours...", "processing");
-        const newTargetData = await compileImageToTargetData(targetFile);
-
-        // Step 3: Check for existing tracking maps
-        showStatus("Phase 3: Syncing with existing global tracking files...", "processing");
-        const currentMindBuffer = await fetchExistingMindBuffer(token);
-        
-        let finalMindBuffer;
-        const compiler = getCompilerInstance();
-
-        if (currentMindBuffer) {
-          showStatus("Phase 4: Merging new artwork tracking indices into master archive array...", "processing");
-          const imageList = compiler.importData(currentMindBuffer);
-          imageList.push(newTargetData[0]); 
-          finalMindBuffer = compiler.exportData(imageList);
-        } else {
-          showStatus("Phase 4: Creating pristine master tracking database file...", "processing");
-          finalMindBuffer = compiler.exportData(newTargetData);
-        }
-
-        // Step 4: Convert to upload delivery streams
-        showStatus("Phase 5: Structuring binary asset upload payloads...", "processing");
+        showStatus("Encoding asset payload profiles...", "processing");
         const videoBase64 = await convertFileToBase64(videoFile);
         const imageBase64 = await convertFileToBase64(targetFile);
-        const mindBase64 = btoa(String.fromCharCode(...new Uint8Array(finalMindBuffer)));
 
-        // Step 5: Execute GitHub API uploads
-        showStatus(`Phase 6: Uploading motion layer overlay: ${videoName}...`, "processing");
+        showStatus(`Streaming motion layer: ${videoName}...`, "processing");
         await pushFileToGitHub(token, videoName, videoBase64, `Upload video layer for ${title}`);
 
-        showStatus(`Phase 7: Uploading reference image canvas snapshot: ${imageName}...`, "processing");
-        await pushFileToGitHub(token, imageName, imageBase64, `Upload tracking reference for ${title}`);
+        showStatus(`Streaming tracking snapshot target: ${imageName}...`, "processing");
+        await pushFileToGitHub(token, imageName, imageBase64, `Upload image target for ${title}`);
 
-        showStatus("Phase 8: Saving updated tracking vector ledger maps (.mind)...", "processing");
-        await pushFileToGitHub(token, "targets.mind", mindBase64, `Append compiled tracking profile index mappings for ${title}`);
-
-        showStatus("Phase 9: Recording metadata fields to central gallery database...", "processing");
+        showStatus("Writing details to main registry ledger database...", "processing");
         await appendRecordToLedger(token, { title, subtext, provenance, image: imageName, video: videoName });
 
-        showStatus("Gallery profile successfully compiled and published! Give GitHub 60 seconds to deploy, then clear your Safari cache and test.", "success");
+        showStatus("Successfully updated. No compilation files needed! Clear your Safari cache and test.", "success");
         document.getElementById('art-title').value = '';
         document.getElementById('art-subtext').value = '';
         document.getElementById('art-provenance').value = '';
-        document.getElementById('file-target').value = '';
-        document.getElementById('file-video').value = '';
-        document.getElementById('label-image').innerText = "Select Raw Target Image";
-        document.getElementById('label-video').innerText = "Select Motion Asset";
       } catch (err) {
-        showStatus(`Compilation Fault: ${err.message}`, "error");
+        showStatus(`Upload Error: ${err.message}`, "error");
       } finally {
         btn.disabled = false;
       }
-    }
-
-    function compileImageToTargetData(file) {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.src = URL.createObjectURL(file);
-        img.onload = async () => {
-          try {
-            const compiler = getCompilerInstance();
-            const trackingData = await compiler.compileImageTargets([img], (progress) => {
-              showStatus(`Phase 2: Surface vector compilation: ${Math.round(progress)}%`, "processing");
-            });
-            resolve(trackingData);
-          } catch (e) { reject(e); }
-        };
-        img.onerror = () => reject(new Error("Failed to map graphic image contours. Image file might be corrupted."));
-      });
-    }
-
-    async function fetchExistingMindBuffer(token) {
-      const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/targets.mind`;
-      try {
-        const res = await fetch(url, { headers: { "Authorization": `token ${token}` } });
-        if (res.ok) {
-          const data = await res.json();
-          const binaryString = atob(data.content);
-          const len = binaryString.length;
-          const bytes = new Uint8Array(len);
-          for (let i = 0; i < len; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-          }
-          return bytes.buffer;
-        }
-      } catch (e) {}
-      return null;
     }
 
     function convertFileToBase64(file) {
@@ -229,13 +141,9 @@
     async function pushFileToGitHub(token, filename, base64Content, commitMsg) {
       const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${filename}`;
       let sha = null;
-
       try {
         const res = await fetch(url, { headers: { "Authorization": `token ${token}` } });
-        if (res.ok) {
-          const data = await res.json();
-          sha = data.sha;
-        }
+        if (res.ok) { const data = await res.json(); sha = data.sha; }
       } catch (e) {}
 
       const body = { message: commitMsg, content: base64Content };
@@ -246,7 +154,7 @@
         headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify(body)
       });
-      if (!res.ok) throw new Error(`Repository upload block encountered for asset profile: ${filename}`);
+      if (!res.ok) throw new Error(`Failed to transmit file array: ${filename}`);
     }
 
     async function appendRecordToLedger(token, newArtwork) {
@@ -269,7 +177,7 @@
         headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ message: `Automated ledger indexing for: ${newArtwork.title}`, content: updatedBase64, sha })
       });
-      if (!putRes.ok) throw new Error("Central JSON database transactions denied.");
+      if (!putRes.ok) throw new Error("Central ledger entry update transaction rejected.");
     }
   </script>
 </body>
