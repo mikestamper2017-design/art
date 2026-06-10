@@ -10,19 +10,15 @@
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
   <style>
-    /* Force the body to be completely transparent so the injected device camera can be seen */
     body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: transparent; }
     
-    /* Premium Gatekeeper screen bypassing iOS autoplay/interaction blocks */
     #ios-gatekeeper { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #fff; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; text-align: center; }
     .gatekeeper-title { font-size: 24px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 8px; }
     .gatekeeper-sub { font-size: 14px; color: #666; margin-bottom: 32px; max-width: 280px; line-height: 1.5; }
     .gatekeeper-btn { background: #000; color: #fff; border: none; padding: 16px 32px; font-size: 14px; font-weight: 600; border-radius: 6px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
 
-    /* UI Overlay design specifications floating safely above the raw camera canvas */
     .tracking-indicator { position: fixed; top: 20px; left: 20px; background: rgba(0,0,0,0.75); color: #fff; padding: 8px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; z-index: 999; pointer-events: none; }
     
-    /* Clean lower dock floating right on top of the fullscreen camera view */
     #media-dock { width: 100vw; height: 28vh; position: fixed; bottom: 0; left: 0; background-color: #ffffff; box-shadow: 0 -4px 25px rgba(0,0,0,0.15); border-top: 1px solid #e5e5e7; z-index: 999; box-sizing: border-box; border-radius: 16px 16px 0 0; }
     .meta-block { display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding: 20px 24px 24px 24px; box-sizing: border-box; }
     .art-title { font-size: 18px; font-weight: 600; color: #111; margin: 0 0 4px 0; }
@@ -33,7 +29,6 @@
     .btn-inactive { background: #fff; color: #000; }
     #provenance-panel { display: none; font-size: 13px; color: #444; line-height: 1.6; margin-top: 8px; max-height: 55px; overflow-y: auto; }
     
-    /* Ensure the system scanning frame overlays elegantly */
     .mindar-ui-scanning { z-index: 99 !important; }
   </style>
 </head>
@@ -55,9 +50,8 @@
 
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <a-entity id="target-anchor-0" mindar-image-target="targetIndex: 0">
-       <a-video id="ar-video-player" src="" position="0 0 0" height="0.75" width="1" rotation="0 0 0"></a-video>
-    </a-entity>
+    <g-ui-anchor-group id="automation-anchors"></g-ui-anchor-group>
+
   </a-scene>
 
   <div id="media-dock">
@@ -76,28 +70,28 @@
 
   <script>
     let registryData = [];
-    let currentVideoEl = null;
+    const activeVideos = {};
 
     async function loadGalleryLedger() {
       try {
         const response = await fetch('./artworks.json?cb=' + Date.now());
         if (response.ok) {
           registryData = await response.json();
-          preloadMediaAssets();
+          buildARWorkspace();
         }
       } catch (err) {
         console.error("Ledger communication synchronization breakdown:", err);
       }
     }
 
-    function preloadMediaAssets() {
+    function buildARWorkspace() {
       const library = document.getElementById('asset-library');
-      if (registryData && registryData.length > 0) {
-        // Automatically target the latest entry uploaded to the dashboard
-        const artwork = registryData[registryData.length - 1]; 
-        
+      const scene = document.querySelector('a-scene');
+
+      registryData.forEach((artwork, index) => {
+        // 1. Create and append the video element
         const video = document.createElement('video');
-        video.setAttribute('id', 'source-video-active');
+        video.setAttribute('id', `vid-${index}`);
         video.setAttribute('src', `./${artwork.video}`);
         video.setAttribute('preload', 'auto');
         video.setAttribute('loop', 'true');
@@ -106,36 +100,51 @@
         video.setAttribute('webkit-playsinline', 'true');
         library.appendChild(video);
         
-        document.getElementById('ar-video-player').setAttribute('src', '#source-video-active');
-        currentVideoEl = video;
-      }
+        activeVideos[index] = video;
+
+        // 2. Create and append the target anchor entity
+        const anchor = document.createElement('a-entity');
+        anchor.setAttribute('mindar-image-target', `targetIndex: ${index}`);
+        
+        // Create the video mesh surface inside the anchor
+        const videoMesh = document.createElement('a-video');
+        videoMesh.setAttribute('src', `#vid-${index}`);
+        videoMesh.setAttribute('position', '0 0 0');
+        videoMesh.setAttribute('height', '0.75');
+        videoMesh.setAttribute('width', '1');
+        videoMesh.setAttribute('rotation', '0 0 0');
+        
+        anchor.appendChild(videoMesh);
+
+        // 3. Bind recognition event handlers directly to this index item
+        anchor.addEventListener("targetFound", () => {
+          document.getElementById('scan-badge').innerText = "System: Locked";
+          document.getElementById('display-title').innerText = artwork.title;
+          document.getElementById('display-sub').innerText = artwork.subtext;
+          document.getElementById('provenance-panel').innerText = artwork.provenance || "No metadata listed.";
+          
+          if (activeVideos[index]) {
+            activeVideos[index].play().catch(e => console.log("Playback block handled:", e));
+          }
+        });
+
+        anchor.addEventListener("targetLost", () => {
+          document.getElementById('scan-badge').innerText = "System: Active Scan";
+          if (activeVideos[index]) {
+            activeVideos[index].pause();
+          }
+        });
+
+        scene.appendChild(anchor);
+      });
     }
 
     function initializeStudioExperience() {
       document.getElementById('ios-gatekeeper').style.display = 'none';
       document.getElementById('scan-badge').innerText = "System: Active Scan";
 
-      // Fire tracking pipeline engine explicitly
       const sceneEl = document.querySelector('a-scene');
       sceneEl.systems['mindar-image-system'].start();
-
-      const anchor = document.getElementById('target-anchor-0');
-      const latestArtwork = registryData[registryData.length - 1];
-      
-      anchor.addEventListener("targetFound", () => {
-        document.getElementById('scan-badge').innerText = "System: Locked";
-        if (latestArtwork) {
-          document.getElementById('display-title').innerText = latestArtwork.title;
-          document.getElementById('display-sub').innerText = latestArtwork.subtext;
-          document.getElementById('provenance-panel').innerText = latestArtwork.provenance || "No track records updated.";
-        }
-        if (currentVideoEl) currentVideoEl.play();
-      });
-
-      anchor.addEventListener("targetLost", () => {
-        document.getElementById('scan-badge').innerText = "System: Active Scan";
-        if (currentVideoEl) currentVideoEl.pause();
-      });
     }
 
     function switchDockTab(targetTab) {
